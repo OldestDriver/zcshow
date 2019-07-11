@@ -3,15 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using System;
+using BestHTTP;
+using BestHTTP.SocketIO;
+using System.Text;
 
 
 public class StepThreeCardAgent : CardBaseAgent
 {
 
-    //第二步
+    //第三步
     [SerializeField,Header("UI")] private Text _countdownText;
     [SerializeField] private List<RawImage> _dots;//红点
     [SerializeField] private Text _titleText;//标题
+    [SerializeField] private RawImage _previewRawImage;//照片
+
 
     private int _countDownNum = 3;//倒计时数字
     private int _totalPicture = 0 ;//图片总数
@@ -24,6 +30,12 @@ public class StepThreeCardAgent : CardBaseAgent
     private bool _doCountDownLock = false;
     private bool _doShootLock = false;
     private bool _doHandleLock = false;
+
+    //拍照相关
+    SocketManager socketioManager;
+    public delegate void OnCamfiFileAddHandler(string fileurl);
+    public event OnCamfiFileAddHandler CamfiFileAdd;
+
 
     private void Reset() {
         _countDownNum = 3;
@@ -54,6 +66,10 @@ public class StepThreeCardAgent : CardBaseAgent
     }
 
 
+    private bool _cameraIsPrepared = false;
+
+
+
     /// <summary>
     /// 准备阶段
     /// </summary>
@@ -61,8 +77,116 @@ public class StepThreeCardAgent : CardBaseAgent
         //_introduceText.text = "";
 
         Reset();
+        
+ 
+
+        SocketOptions option = new SocketOptions();
+
+        socketioManager = new SocketManager(new Uri(CamfiServerInfo.SockIOUrlStr));
+        InitSocketIOManager();
+
+        try
+        {
+            socketioManager.Open();
+
+
+        }
+        catch (Exception e)
+        {
+            Debug.Log("SocketIO Open 捕获到了异常" + e.ToString());
+        }
 
         CompletePrepare();
+
+    }
+
+    
+    #region Manager的一些方法
+    void InitSocketIOManager()
+    {
+        socketioManager.Socket.On("connect", OnConnected);
+        socketioManager.Socket.On("disconnect", OnDisConnected);
+        socketioManager.Socket.On("camera_add", OnCameraAdd);
+        socketioManager.Socket.On("camera_remove", OnCameraRemove);
+        socketioManager.Socket.On("file_added", OnFileAdded);
+        socketioManager.Socket.On("liveshow_error", OnLiveshowError);
+
+    }
+    #endregion
+
+    #region CamFi服务器SocketIO事件回调函数
+    void OnConnected(Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("与CamFi的SokectIO连接建立");
+    }
+    void OnDisConnected(Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("与CamFi的SokectIO连接 断开");
+    }
+    void OnCameraAdd(Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("CamFi连接了相机");
+
+        _cameraIsPrepared = true;
+
+        StartLiveShow();
+
+    }
+
+    void OnCameraRemove(Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("CamFi丢失相机连接");
+
+        _cameraIsPrepared = false;
+    }
+    void OnFileAdded(Socket socket, Packet packet, params object[] args)
+    {
+
+        string pathInCamfi = args[0].ToString();
+        Debug.Log("照片添加，其Url: " + pathInCamfi);
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.CamFiGetRawDataByEnCodeUrlStr(UrlEncode(pathInCamfi))), HTTPMethods.Get, GetRawDataFinished);
+        request.Send();
+    }
+    void OnLiveshowError(Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("实时取景发送错误");
+    }
+    #endregion
+
+    void GetRawDataFinished(HTTPRequest request, HTTPResponse response)
+    {
+        Debug.Log("GetRawDataFinished! Text received: " + response.StatusCode + response.Data);
+        if (response.StatusCode == 200)
+        {
+            //获取照片成功
+            _previewRawImage.texture = response.DataAsTexture2D;
+        }
+    }
+
+    public void StartLiveShow()
+    {
+        Debug.Log("开始实时取景");
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StartLiveShowUrlStr), HTTPMethods.Get, StartLiveShowRequestFinished);
+        request.Send();
+    }
+
+    void StartLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
+    {
+        Debug.Log("StartLiveShowRequestFinished! Text received: " + response.StatusCode);
+
+    }
+    
+    
+    public static string UrlEncode(string str)
+    {
+        StringBuilder sb = new StringBuilder();
+        byte[] byStr = System.Text.Encoding.UTF8.GetBytes(str); //默认是System.Text.Encoding.Default.GetBytes(str)
+        for (int i = 0; i < byStr.Length; i++)
+        {
+            sb.Append(@"%" + Convert.ToString(byStr[i], 16));
+        }
+
+        return (sb.ToString());
     }
 
     public override void DoRunIn()
@@ -77,15 +201,22 @@ public class StepThreeCardAgent : CardBaseAgent
     /// 运行阶段
     /// </summary>
     public override void DoRun() {
-        // 依次拍摄三张照片
-        if (!_beginFlowComplete)
+
+        if (_cameraIsPrepared)
         {
-            BeginShootFlow();
+            // 依次拍摄三张照片
+            if (!_beginFlowComplete)
+            {
+                //BeginShootFlow();
+            }
+            else
+            {
+                DoRunOut();
+            }
         }
         else {
-            DoRunOut();
+            Debug.Log("相机未准备完成！");
         }
-
 
     }
 
@@ -277,8 +408,15 @@ public class StepThreeCardAgent : CardBaseAgent
     /// 显示预览
     /// </summary>
     private void ShowPreview() {
-        Debug.Log("模拟预览功能");
+        //Debug.Log("模拟预览功能");
+
     }
 
-
+    void OnDisable()
+    {
+        if (socketioManager != null)
+        {
+            socketioManager.Close();
+        }
+    }
 }
