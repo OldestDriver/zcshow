@@ -7,7 +7,10 @@ using System;
 using BestHTTP;
 using BestHTTP.SocketIO;
 using System.Text;
-
+using System.Net.Sockets;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 
 public class StepThreeCardAgent : CardBaseAgent
 {
@@ -106,24 +109,23 @@ public class StepThreeCardAgent : CardBaseAgent
     {
         socketioManager.Socket.On("connect", OnConnected);
         socketioManager.Socket.On("disconnect", OnDisConnected);
-        socketioManager.Socket.On("camera_add", OnCameraAdd);
         socketioManager.Socket.On("camera_remove", OnCameraRemove);
+        socketioManager.Socket.On("camera_add", OnCameraAdd);
         socketioManager.Socket.On("file_added", OnFileAdded);
-        socketioManager.Socket.On("liveshow_error", OnLiveshowError);
 
     }
     #endregion
 
     #region CamFi服务器SocketIO事件回调函数
-    void OnConnected(Socket socket, Packet packet, params object[] args)
+    void OnConnected(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
     {
         Debug.LogWarning("与CamFi的SokectIO连接建立");
     }
-    void OnDisConnected(Socket socket, Packet packet, params object[] args)
+    void OnDisConnected(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
     {
         Debug.LogWarning("与CamFi的SokectIO连接 断开");
     }
-    void OnCameraAdd(Socket socket, Packet packet, params object[] args)
+    void OnCameraAdd(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
     {
         Debug.LogWarning("CamFi连接了相机");
 
@@ -133,13 +135,13 @@ public class StepThreeCardAgent : CardBaseAgent
 
     }
 
-    void OnCameraRemove(Socket socket, Packet packet, params object[] args)
+    void OnCameraRemove(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
     {
         Debug.LogWarning("CamFi丢失相机连接");
 
         _cameraIsPrepared = false;
     }
-    void OnFileAdded(Socket socket, Packet packet, params object[] args)
+    void OnFileAdded(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
     {
 
         string pathInCamfi = args[0].ToString();
@@ -147,9 +149,13 @@ public class StepThreeCardAgent : CardBaseAgent
         HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.CamFiGetRawDataByEnCodeUrlStr(UrlEncode(pathInCamfi))), HTTPMethods.Get, GetRawDataFinished);
         request.Send();
     }
-    void OnLiveshowError(Socket socket, Packet packet, params object[] args)
+    void OnLiveshowError(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
     {
         Debug.LogWarning("实时取景发送错误");
+    }
+    void OnLiveshowData(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
+    {
+        print(packet.AttachmentCount);
     }
     #endregion
 
@@ -173,10 +179,64 @@ public class StepThreeCardAgent : CardBaseAgent
     void StartLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
     {
         Debug.Log("StartLiveShowRequestFinished! Text received: " + response.StatusCode);
+        if (response.StatusCode == 200)
+        {
+            Debug.Log("实时取景成功");
 
+            SocketManager socket = new SocketManager(new Uri("http://192.168.9.67:890/socket.io/"));
+            socket.Socket.On(SocketIOEventTypes.Connect, OnLiveshowData);
+            socket.Socket.On("liveshow_error", OnLiveshowError);
+
+            //socket.Open();
+            try
+            {
+                socket.Open();
+            }
+            catch(Exception e)
+            {
+                Debug.Log("SocketIO Open 捕获到了异常" + e.ToString());
+            }
+            /*
+            socket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            IPEndPoint sender = new IPEndPoint(IPAddress.Parse("192.168.9.67"), 890);
+            serverEnd = (EndPoint)sender;
+            Thread thread = new Thread(new ThreadStart(SocketReceive));
+            thread.IsBackground = true;
+            thread.Start();
+            */
+        }
     }
-    
-    
+
+
+
+    //接收
+    void SocketReceive()
+    {
+        while (true)
+        {
+
+            byte[] recvData = new byte[1024*1024*10];
+            int recvLen;
+            try
+            {
+                recvLen = socket.ReceiveFrom(recvData, ref serverEnd);
+                if (recvLen > 0)
+                {
+                    print(111);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.StackTrace);
+            }
+
+        }
+    }
+
+    private string IP = "192.168.9.67";
+    System.Net.Sockets.Socket socket;
+    EndPoint serverEnd;
+
     public static string UrlEncode(string str)
     {
         StringBuilder sb = new StringBuilder();
@@ -417,6 +477,10 @@ public class StepThreeCardAgent : CardBaseAgent
         if (socketioManager != null)
         {
             socketioManager.Close();
+        }
+        if (socket != null)
+        {
+            socket.Close();
         }
     }
 }
