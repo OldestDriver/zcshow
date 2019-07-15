@@ -17,11 +17,11 @@ public class MainManager : MonoBehaviour
     {
         cards = new List<CardBaseAgent>();
 
-        cards.Add(card1);
-        cards.Add(card2);
-        cards.Add(card3);
-        cards.Add(card4);
-        cards.Add(card5);
+        //cards.Add(card1);
+        //cards.Add(card2);
+        //cards.Add(card3);
+        //cards.Add(card4);
+        //cards.Add(card5);
 
     }
 

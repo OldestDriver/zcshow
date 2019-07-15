@@ -1,103 +1,33 @@
 fileFormatVersion: 2
-guid: d80bfb58318c39c40b9f629c14aa3eef
-labels:
-- http
-- www
-- web
-- cache
-- stream
-- WP8
-- rest
-- websocket
-- socket
-- socket.io
-- websockets
-- cookie
-- proxy
-- ios
-- android
-- wp8
-- tcp
-- https
-- signalr
-- server-sent
-- event
+guid: b675316c420b1d34f931882e20894712
 PluginImporter:
-  serializedVersion: 1
+  externalObjects: {}
+  serializedVersion: 2
   iconMap: {}
   executionOrder: {}
+  defineConstraints: []
   isPreloaded: 0
+  isOverridable: 0
+  isExplicitlyReferenced: 0
+  validateReferences: 1
   platformData:
-    Android:
+  - first:
+      Any: 
+    second:
       enabled: 1
-      settings:
-        CPU: AnyCPU
-    Any:
+      settings: {}
+  - first:
+      Editor: Editor
+    second:
       enabled: 0
-      settings: {}
-    BlackBerry:
-      enabled: 1
-      settings: {}
-    Editor:
-      enabled: 1
       settings:
-        CPU: AnyCPU
         DefaultValueInitialized: true
-        OS: AnyOS
-    Linux:
-      enabled: 1
-      settings:
-        CPU: x86
-    Linux64:
-      enabled: 1
-      settings:
-        CPU: x86_64
-    LinuxUniversal:
-      enabled: 1
-      settings: {}
-    OSXIntel:
-      enabled: 1
-      settings:
-        CPU: AnyCPU
-    OSXIntel64:
-      enabled: 1
-      settings:
-        CPU: AnyCPU
-    OSXUniversal:
-      enabled: 1
-      settings: {}
-    WP8:
+  - first:
+      Windows Store Apps: WindowsStoreApps
+    second:
       enabled: 0
       settings:
         CPU: AnyCPU
-        DontProcess: False
-        PlaceholderPath: 
-    Web:
-      enabled: 1
-      settings: {}
-    WebStreamed:
-      enabled: 1
-      settings: {}
-    Win:
-      enabled: 1
-      settings:
-        CPU: AnyCPU
-    Win64:
-      enabled: 1
-      settings:
-        CPU: AnyCPU
-    WindowsStoreApps:
-      enabled: 0
-      settings:
-        CPU: AnyCPU
-        DontProcess: False
-        PlaceholderPath: 
-        SDK: AnySDK
-    iOS:
-      enabled: 1
-      settings:
-        CompileFlags: 
-        FrameworkDependencies: 
   userData: 
   assetBundleName: 
   assetBundleVariant: 
