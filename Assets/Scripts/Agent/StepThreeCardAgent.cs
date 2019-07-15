@@ -1,16 +1,16 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
+﻿using BestHTTP;
+using BestHTTP.SocketIO;
 using DG.Tweening;
 using System;
-using BestHTTP;
-using BestHTTP.SocketIO;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
+using UnityEngine;
+using UnityEngine.UI;
 using System.Net.Sockets;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
+using System.IO;
 
 public class StepThreeCardAgent : CardBaseAgent
 {
@@ -36,8 +36,9 @@ public class StepThreeCardAgent : CardBaseAgent
 
     //拍照相关
     SocketManager socketioManager;
-    public delegate void OnCamfiFileAddHandler(string fileurl);
-    public event OnCamfiFileAddHandler CamfiFileAdd;
+    //public delegate void OnCamfiFileAddHandler(string fileurl);
+    //public event OnCamfiFileAddHandler CamfiFileAdd;
+
 
 
     private void Reset() {
@@ -176,66 +177,177 @@ public class StepThreeCardAgent : CardBaseAgent
         request.Send();
     }
 
+    private System.Net.Sockets.Socket mediaSocket;
+    private Thread mediaThread;
+
     void StartLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
     {
         Debug.Log("StartLiveShowRequestFinished! Text received: " + response.StatusCode);
         if (response.StatusCode == 200)
         {
-            Debug.Log("实时取景成功");
-
-            SocketManager socket = new SocketManager(new Uri("http://192.168.9.67:890/socket.io/"));
-            socket.Socket.On(SocketIOEventTypes.Connect, OnLiveshowData);
-            socket.Socket.On("liveshow_error", OnLiveshowError);
-
-            //socket.Open();
-            try
+            Debug.Log("开始实时取景成功");
+            
+            if (mediaSocket != null)
             {
-                socket.Open();
+                mediaSocket.Close();
             }
-            catch(Exception e)
-            {
-                Debug.Log("SocketIO Open 捕获到了异常" + e.ToString());
-            }
-            /*
-            socket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            IPEndPoint sender = new IPEndPoint(IPAddress.Parse("192.168.9.67"), 890);
-            serverEnd = (EndPoint)sender;
-            Thread thread = new Thread(new ThreadStart(SocketReceive));
-            thread.IsBackground = true;
-            thread.Start();
-            */
+            //filePath = Application.persistentDataPath + "/media.txt";
+            //Debug.Log("文件保存路径：" + filePath);
+            //if (File.Exists(filePath))
+            //{
+            //    File.Delete(filePath);
+            //}
+            mediaSocket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            mediaSocket.Connect(IPAddress.Parse("192.168.9.67"), 890);
+            mediaThread = new Thread(SocketReceivce);
+            mediaThread.Start();
         }
     }
 
-
-
-    //接收
-    void SocketReceive()
+    bool soi = false;
+    List<byte> photoBytes;
+    private bool isShowImage;
+    void SocketReceivce()
     {
         while (true)
         {
-
-            byte[] recvData = new byte[1024*1024*10];
-            int recvLen;
-            try
+            byte[] data = new byte[1024];
+            int len = mediaSocket.Receive(data);
+            if (len > 0)
             {
-                recvLen = socket.ReceiveFrom(recvData, ref serverEnd);
-                if (recvLen > 0)
+                //StreamWriter sw;
+                //FileInfo fi = new FileInfo(filePath);
+                //if (File.Exists(filePath))
+                //{
+                //    sw = fi.AppendText();
+                //}   else
+                //{
+                //    sw = fi.CreateText();
+                //}
+                //sw.Write(str);
+                //sw.Close();
+                //sw.Dispose();
+
+                string str = BitConverter.ToString(data);
+                Debug.Log(str);
+                string[] chars = str.Split('-');
+
+                //char[] chars = new char[strs.Length];
+
+                //for (int i=0; i< strs.Length; i++)
+                //{
+                //    chars[i] = strs[i][0];
+                //}
+                //foreach(char s in chars)
+                //{
+                //    Debug.Log(s);
+                //}
+
+                //foreach (char s in chars)
+                //{
+                //    Debug.Log(s);
+                //}
+                //Debug.Log(chars.Length);
+                int start = -1;
+                int end = -1;
+
+                for (int i=0; i<chars.Length-1; i++)
                 {
-                    print(111);
+                    //Debug.Log(chars[i]);
+                    if (chars[i] == "FF")
+                    {
+                        if (i != chars.Length-1 && chars[i+1] == "D8")
+                        {
+                            soi = true;
+                            start = i;
+                        }
+                    }
+                    if (chars[i] == "FF")
+                    {
+                        if (i != chars.Length - 1 && chars[i + 1] == "D9")
+                        {
+                            end = i;
+                            soi = false;
+                        }
+                    }                   
                 }
+                isShowImage = false;
+                if (soi && (end == -1 && start == -1))
+                {
+                    for (int i=0; i<data.Length; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                    }
+                }   
+                else if ((start > -1) && (end > -1))
+                {
+                    for (int i=0; i<end+2; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                        isShowImage = true;
+                    }
+                    photoBytes = new List<byte>();
+                    for (int i=start; i< data.Length-start; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                    }
+                }
+                else if ((start == -1) && (end > -1))
+                {
+                    for (int i=0; i<end+2; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                    }
+                    isShowImage = true;
+                    photoBytes = new List<byte>();
+                }
+                else if (soi && (start > -1) && (end == -1))
+                {
+                    for (int i = start; i < data.Length - start; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                    }
+                }
+                
             }
-            catch (Exception e)
-            {
-                Debug.Log(e.StackTrace);
-            }
-
         }
     }
 
-    private string IP = "192.168.9.67";
-    System.Net.Sockets.Socket socket;
-    EndPoint serverEnd;
+    private void ShowImage()
+    {
+        Texture2D texture = new Texture2D(500, 500);
+        texture.LoadImage(photoBytes.ToArray());
+
+    }
+
+    private static string byteToHexStr(byte[] bytes, int length)
+    {
+        string returnStr = "";
+        if (bytes != null)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                returnStr += bytes[i].ToString("X2");
+            }
+        }
+        return returnStr;
+    }
+
+    public void StopLiveShow()
+    {
+        Debug.Log("关闭视频流");
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StopLiveShowUrlStr), HTTPMethods.Get, StopLiveShowRequestFinished);
+        request.Send();
+    }
+
+    void StopLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
+    {
+        Debug.Log("StopLiveShowRequestFinished! Text received: " + response.StatusCode);
+        if (response.StatusCode == 200)
+        {
+            Debug.Log("关闭视频流");          
+        }
+    }
 
     public static string UrlEncode(string str)
     {
@@ -248,6 +360,15 @@ public class StepThreeCardAgent : CardBaseAgent
 
         return (sb.ToString());
     }
+
+    #region 向CamFi 发送RESTAPI的函数
+    public void TakePhoto()
+    {
+        Debug.Log("向Camfi下达拍照指令");
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.TakePictureUrlStr), HTTPMethods.Get);
+        request.Send();
+    }
+    #endregion
 
     public override void DoRunIn()
     {
@@ -267,7 +388,7 @@ public class StepThreeCardAgent : CardBaseAgent
             // 依次拍摄三张照片
             if (!_beginFlowComplete)
             {
-                //BeginShootFlow();
+                BeginShootFlow();
             }
             else
             {
@@ -421,6 +542,7 @@ public class StepThreeCardAgent : CardBaseAgent
     IEnumerator DoShoot() {
 
         Debug.Log("模拟拍摄");
+        //TakePhoto();
         yield return new WaitForSeconds(3);
         _totalPicture++;
         Debug.Log("已拍" + _totalPicture + "张照片");
@@ -469,6 +591,11 @@ public class StepThreeCardAgent : CardBaseAgent
     /// </summary>
     private void ShowPreview() {
         //Debug.Log("模拟预览功能");
+        if (isShowImage)
+        {
+            Debug.Log("实时取景中...");
+            ShowImage();
+        }
 
     }
 
@@ -478,9 +605,12 @@ public class StepThreeCardAgent : CardBaseAgent
         {
             socketioManager.Close();
         }
-        if (socket != null)
+        if (mediaSocket != null)
         {
-            socket.Close();
+            mediaSocket.Close();
         }
+        StopLiveShow();
     }
+
+   
 }
