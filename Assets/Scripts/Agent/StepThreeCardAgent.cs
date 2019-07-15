@@ -1,17 +1,26 @@
-﻿using System.Collections;
+﻿using BestHTTP;
+using BestHTTP.SocketIO;
+using DG.Tweening;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
-using DG.Tweening;
-
+using System.Net.Sockets;
+using System.Net;
+using System.Threading;
+using System.IO;
 
 public class StepThreeCardAgent : CardBaseAgent
 {
 
-    //第二步
+    //第三步
     [SerializeField,Header("UI")] private Text _countdownText;
     [SerializeField] private List<RawImage> _dots;//红点
     [SerializeField] private Text _titleText;//标题
+    [SerializeField] private RawImage _previewRawImage;//照片
+
 
     private int _countDownNum = 3;//倒计时数字
     private int _totalPicture = 0 ;//图片总数
@@ -24,6 +33,13 @@ public class StepThreeCardAgent : CardBaseAgent
     private bool _doCountDownLock = false;
     private bool _doShootLock = false;
     private bool _doHandleLock = false;
+
+    //拍照相关
+    SocketManager socketioManager;
+    //public delegate void OnCamfiFileAddHandler(string fileurl);
+    //public event OnCamfiFileAddHandler CamfiFileAdd;
+
+
 
     private void Reset() {
         _countDownNum = 3;
@@ -54,6 +70,10 @@ public class StepThreeCardAgent : CardBaseAgent
     }
 
 
+    private bool _cameraIsPrepared = false;
+
+
+
     /// <summary>
     /// 准备阶段
     /// </summary>
@@ -61,9 +81,294 @@ public class StepThreeCardAgent : CardBaseAgent
         //_introduceText.text = "";
 
         Reset();
+        
+ 
+
+        SocketOptions option = new SocketOptions();
+
+        socketioManager = new SocketManager(new Uri(CamfiServerInfo.SockIOUrlStr));
+        InitSocketIOManager();
+
+        try
+        {
+            socketioManager.Open();
+
+
+        }
+        catch (Exception e)
+        {
+            Debug.Log("SocketIO Open 捕获到了异常" + e.ToString());
+        }
 
         CompletePrepare();
+
     }
+
+    
+    #region Manager的一些方法
+    void InitSocketIOManager()
+    {
+        socketioManager.Socket.On("connect", OnConnected);
+        socketioManager.Socket.On("disconnect", OnDisConnected);
+        socketioManager.Socket.On("camera_remove", OnCameraRemove);
+        socketioManager.Socket.On("camera_add", OnCameraAdd);
+        socketioManager.Socket.On("file_added", OnFileAdded);
+
+    }
+    #endregion
+
+    #region CamFi服务器SocketIO事件回调函数
+    void OnConnected(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("与CamFi的SokectIO连接建立");
+    }
+    void OnDisConnected(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("与CamFi的SokectIO连接 断开");
+    }
+    void OnCameraAdd(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("CamFi连接了相机");
+
+        _cameraIsPrepared = true;
+
+        StartLiveShow();
+
+    }
+
+    void OnCameraRemove(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("CamFi丢失相机连接");
+
+        _cameraIsPrepared = false;
+    }
+    void OnFileAdded(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
+    {
+
+        string pathInCamfi = args[0].ToString();
+        Debug.Log("照片添加，其Url: " + pathInCamfi);
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.CamFiGetRawDataByEnCodeUrlStr(UrlEncode(pathInCamfi))), HTTPMethods.Get, GetRawDataFinished);
+        request.Send();
+    }
+    void OnLiveshowError(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
+    {
+        Debug.LogWarning("实时取景发送错误");
+    }
+    void OnLiveshowData(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
+    {
+        print(packet.AttachmentCount);
+    }
+    #endregion
+
+    void GetRawDataFinished(HTTPRequest request, HTTPResponse response)
+    {
+        Debug.Log("GetRawDataFinished! Text received: " + response.StatusCode + response.Data);
+        if (response.StatusCode == 200)
+        {
+            //获取照片成功
+            _previewRawImage.texture = response.DataAsTexture2D;
+        }
+    }
+
+    public void StartLiveShow()
+    {
+        Debug.Log("开始实时取景");
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StartLiveShowUrlStr), HTTPMethods.Get, StartLiveShowRequestFinished);
+        request.Send();
+    }
+
+    private System.Net.Sockets.Socket mediaSocket;
+    private Thread mediaThread;
+
+    void StartLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
+    {
+        Debug.Log("StartLiveShowRequestFinished! Text received: " + response.StatusCode);
+        if (response.StatusCode == 200)
+        {
+            Debug.Log("开始实时取景成功");
+            
+            if (mediaSocket != null)
+            {
+                mediaSocket.Close();
+            }
+            //filePath = Application.persistentDataPath + "/media.txt";
+            //Debug.Log("文件保存路径：" + filePath);
+            //if (File.Exists(filePath))
+            //{
+            //    File.Delete(filePath);
+            //}
+            mediaSocket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            mediaSocket.Connect(IPAddress.Parse("192.168.9.67"), 890);
+            mediaThread = new Thread(SocketReceivce);
+            mediaThread.Start();
+        }
+    }
+
+    bool soi = false;
+    List<byte> photoBytes;
+    private bool isShowImage;
+    void SocketReceivce()
+    {
+        while (true)
+        {
+            byte[] data = new byte[1024];
+            int len = mediaSocket.Receive(data);
+            if (len > 0)
+            {
+                //StreamWriter sw;
+                //FileInfo fi = new FileInfo(filePath);
+                //if (File.Exists(filePath))
+                //{
+                //    sw = fi.AppendText();
+                //}   else
+                //{
+                //    sw = fi.CreateText();
+                //}
+                //sw.Write(str);
+                //sw.Close();
+                //sw.Dispose();
+
+                string str = BitConverter.ToString(data);
+                Debug.Log(str);
+                string[] chars = str.Split('-');
+
+                //char[] chars = new char[strs.Length];
+
+                //for (int i=0; i< strs.Length; i++)
+                //{
+                //    chars[i] = strs[i][0];
+                //}
+                //foreach(char s in chars)
+                //{
+                //    Debug.Log(s);
+                //}
+
+                //foreach (char s in chars)
+                //{
+                //    Debug.Log(s);
+                //}
+                //Debug.Log(chars.Length);
+                int start = -1;
+                int end = -1;
+
+                for (int i=0; i<chars.Length-1; i++)
+                {
+                    //Debug.Log(chars[i]);
+                    if (chars[i] == "FF")
+                    {
+                        if (i != chars.Length-1 && chars[i+1] == "D8")
+                        {
+                            soi = true;
+                            start = i;
+                        }
+                    }
+                    if (chars[i] == "FF")
+                    {
+                        if (i != chars.Length - 1 && chars[i + 1] == "D9")
+                        {
+                            end = i;
+                            soi = false;
+                        }
+                    }                   
+                }
+                isShowImage = false;
+                if (soi && (end == -1 && start == -1))
+                {
+                    for (int i=0; i<data.Length; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                    }
+                }   
+                else if ((start > -1) && (end > -1))
+                {
+                    for (int i=0; i<end+2; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                        isShowImage = true;
+                    }
+                    photoBytes = new List<byte>();
+                    for (int i=start; i< data.Length-start; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                    }
+                }
+                else if ((start == -1) && (end > -1))
+                {
+                    for (int i=0; i<end+2; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                    }
+                    isShowImage = true;
+                    photoBytes = new List<byte>();
+                }
+                else if (soi && (start > -1) && (end == -1))
+                {
+                    for (int i = start; i < data.Length - start; i++)
+                    {
+                        photoBytes.Add(data[i]);
+                    }
+                }
+                
+            }
+        }
+    }
+
+    private void ShowImage()
+    {
+        Texture2D texture = new Texture2D(500, 500);
+        texture.LoadImage(photoBytes.ToArray());
+
+    }
+
+    private static string byteToHexStr(byte[] bytes, int length)
+    {
+        string returnStr = "";
+        if (bytes != null)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                returnStr += bytes[i].ToString("X2");
+            }
+        }
+        return returnStr;
+    }
+
+    public void StopLiveShow()
+    {
+        Debug.Log("关闭视频流");
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StopLiveShowUrlStr), HTTPMethods.Get, StopLiveShowRequestFinished);
+        request.Send();
+    }
+
+    void StopLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
+    {
+        Debug.Log("StopLiveShowRequestFinished! Text received: " + response.StatusCode);
+        if (response.StatusCode == 200)
+        {
+            Debug.Log("关闭视频流");          
+        }
+    }
+
+    public static string UrlEncode(string str)
+    {
+        StringBuilder sb = new StringBuilder();
+        byte[] byStr = System.Text.Encoding.UTF8.GetBytes(str); //默认是System.Text.Encoding.Default.GetBytes(str)
+        for (int i = 0; i < byStr.Length; i++)
+        {
+            sb.Append(@"%" + Convert.ToString(byStr[i], 16));
+        }
+
+        return (sb.ToString());
+    }
+
+    #region 向CamFi 发送RESTAPI的函数
+    public void TakePhoto()
+    {
+        Debug.Log("向Camfi下达拍照指令");
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.TakePictureUrlStr), HTTPMethods.Get);
+        request.Send();
+    }
+    #endregion
 
     public override void DoRunIn()
     {
@@ -77,15 +382,22 @@ public class StepThreeCardAgent : CardBaseAgent
     /// 运行阶段
     /// </summary>
     public override void DoRun() {
-        // 依次拍摄三张照片
-        if (!_beginFlowComplete)
+
+        if (_cameraIsPrepared)
         {
-            BeginShootFlow();
+            // 依次拍摄三张照片
+            if (!_beginFlowComplete)
+            {
+                BeginShootFlow();
+            }
+            else
+            {
+                DoRunOut();
+            }
         }
         else {
-            DoRunOut();
+            Debug.Log("相机未准备完成！");
         }
-
 
     }
 
@@ -230,6 +542,7 @@ public class StepThreeCardAgent : CardBaseAgent
     IEnumerator DoShoot() {
 
         Debug.Log("模拟拍摄");
+        //TakePhoto();
         yield return new WaitForSeconds(3);
         _totalPicture++;
         Debug.Log("已拍" + _totalPicture + "张照片");
@@ -277,8 +590,27 @@ public class StepThreeCardAgent : CardBaseAgent
     /// 显示预览
     /// </summary>
     private void ShowPreview() {
-        Debug.Log("模拟预览功能");
+        //Debug.Log("模拟预览功能");
+        if (isShowImage)
+        {
+            Debug.Log("实时取景中...");
+            ShowImage();
+        }
+
     }
 
+    void OnDisable()
+    {
+        if (socketioManager != null)
+        {
+            socketioManager.Close();
+        }
+        if (mediaSocket != null)
+        {
+            mediaSocket.Close();
+        }
+        StopLiveShow();
+    }
 
+   
 }
