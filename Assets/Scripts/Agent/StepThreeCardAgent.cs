@@ -222,64 +222,9 @@ public class StepThreeCardAgent : CardBaseAgent
                 //开始结束下标
                 int start = -1;
                 int end = -1;
-                for (int i=0; i < data.Length-1; i++)
+                for (int i=0; i<data.Length-1; i++)
                 {
-                    //Debug.Log(chars[i]);
-                    isShowImage = false;
-                    if (data[i] == 0xff)
-                    {
-                        if (i != data.Length-1)
-                        {
-                            if (data[i + 1] == 0xd8)
-                            {
-                                soi = true;
-                                start = i;
-                                photoBytes = new List<byte>();
-                                for (int j = i; j < data.Length; j++)
-                                {
-                                    photoBytes.Add(data[j]);
-                                }
-                            }
-                            else if (data[i + 1] == 0xd9)
-                            {
-                                if (soi)
-                                {
-                                    for (int j = 0; j < i; j++)
-                                    {
-                                        photoBytes.Add(data[i]);
-                                    }
-                                    isShowImage = true;
-                                    bytes = photoBytes;
-                                    photoBytes = new List<byte>();
-                                    for (int j = i + 2; j < data.Length; j++)
-                                    {
-                                        photoBytes.Add(data[j]);
-                                    }
-                                }
-                                else
-                                {
-                                    photoBytes.Add(data[i]);
-                                }
-                                end = i;
-                                soi = false;
-                            }
-                            else
-                            {
-                                photoBytes.Add(data[i]);
-                            }
-                        }   else
-                        {
-                            if (i ==0 && data[i+1] == 0xd8)
-                            {
-                                soi = true;
 
-                            }
-                        }
-                       
-                    }   else
-                    {
-                        photoBytes.Add(data[i]);
-                    }               
                 }
                 //Debug.Log("start:" + start + "---" + "end:" + end);
 
