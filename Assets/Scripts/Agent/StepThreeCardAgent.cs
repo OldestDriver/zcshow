@@ -4,6 +4,7 @@ using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -39,6 +40,7 @@ public class StepThreeCardAgent : CardBaseAgent
     //public event OnCamfiFileAddHandler CamfiFileAdd;
     private bool isReceive = false;
 
+    private bool flag;
 
     private void Reset() {
         _countDownNum = 3;
@@ -215,21 +217,42 @@ public class StepThreeCardAgent : CardBaseAgent
         photoBytes = new List<byte>();
         while (isReceive)
         {
+
             byte[] data = new byte[1024*1024];
             int len = mediaSocket.Receive(data);
             if (len > 0)
             {
+                //收到数据
+
+                
+                //Debug.Log("返回数据：" + BitConverter.ToString(data));
+
                 //开始结束下标
                 int start = -1;
                 int end = -1;
                 for (int i=0; i<data.Length-1; i++)
                 {
-
+                    if (data[i] == 0xff)
+                    {
+                        if (i != data.Length-1 && data[i+1] == 0xd8)
+                        {
+                            soi = true;
+                            start = i;
+                        }
+                    }
+                    if (data[i] == 0xff)
+                    {
+                        if (i != data.Length-1 && data[i+1] == 0xd9)
+                        {
+                            end = i;
+                            soi = false;
+                        }
+                    }
                 }
                 //Debug.Log("start:" + start + "---" + "end:" + end);
 
 
-                /*
+                
                 if (soi && (end == -1 && start == -1))
                 {
                     for (int i=0; i< data.Length; i++)
@@ -267,8 +290,8 @@ public class StepThreeCardAgent : CardBaseAgent
                     {
                         photoBytes.Add(data[i]);
                     }
-                }
-                */
+                }              
+            
             }
         }
     }
@@ -499,8 +522,6 @@ public class StepThreeCardAgent : CardBaseAgent
         _shootFlowStatus = ShootFlowStatus.ShootCompleted;
     }
 
-
-
     /// <summary>
     /// 拍摄流程 - 拍摄后处理
     /// </summary>
@@ -540,19 +561,46 @@ public class StepThreeCardAgent : CardBaseAgent
     /// </summary>
     private void ShowPreview() {
         //Debug.Log("模拟预览功能");
+        Debug.Log("实时取景中...");
         if (isShowImage)
         {
-            Debug.Log("实时取景中...");
             ShowImage();
         }
-
     }
 
     private void ShowImage()
     {
-        byte[] data = bytes.ToArray();
+            byte[] data = bytes.ToArray();
+
+        //Debug.Log("照片：" + BitConverter.ToString(data));
         Texture2D texture = new Texture2D(100, 100);
         texture.LoadImage(data);
+        _previewRawImage.texture = texture;
+
+        //if (!flag)
+        //{
+        //    flag = true;
+        //    byte[] data = bytes.ToArray();
+
+        //    FileStream fs = File.Open(Application.dataPath + "/1.txt", FileMode.Create);
+        //    BinaryWriter writer = new BinaryWriter(fs);
+        //    writer.Write(data);
+        //    fs.Close();
+        //    TestShowFromFile();
+        //    Debug.Log("保存完成");
+        //    //File.WriteAllText(Application.dataPath + "/2.txt", BitConverter.ToString(data));
+
+        //    return;
+
+        //}
+
+    }
+
+    void TestShowFromFile()
+    {
+        Debug.Log("测试取图");
+        Texture2D texture = new Texture2D(100, 100);
+        texture.LoadImage(File.ReadAllBytes(Application.dataPath + "/1.txt"));
         _previewRawImage.texture = texture;
     }
 
