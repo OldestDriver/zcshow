@@ -4,6 +4,7 @@ public static class CamfiServerInfo
     static string _serverIp = "192.168.9.67";
     static int _serverPort = 80;
     static int _serverEventPort = 8080;
+    static int _captureMoviePort = 890;
     static string _serverURLStr
     {
         get { return String.Format("http://{0}:{1}", _serverIp, _serverPort); }
@@ -57,8 +58,6 @@ public static class CamfiServerInfo
         get { return String.Format("{0}{1}", _serverURLStr, "/files"); }
     }
 
-
-
     public static string CamFiGetThumbnailByEnCodeUrlStr(string encodeUrl)
     {
         return String.Format("{0}{1}/{2}", _serverURLStr, "/thumbnail", encodeUrl);
@@ -70,5 +69,9 @@ public static class CamfiServerInfo
     public static string CamFiGetRawDataByEnCodeUrlStr(string encodeUrl)
     {
         return String.Format("{0}{1}/{2}", _serverURLStr, "/raw", encodeUrl);
+    }
+    public static string CaptureMovieSocketStr
+    {
+        get { return String.Format("http://{0}:{1}/socket.io/", _serverIp, _captureMoviePort); }
     }
 }
