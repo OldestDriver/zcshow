@@ -46,7 +46,7 @@ public static class CamfiServerInfo
     }
     public static string StopLiveShowUrlStr
     {
-        get { return String.Format("{0}{1}", _serverURLStr, "/stopcaptuovie"); }
+        get { return String.Format("{0}{1}", _serverURLStr, "/stopcapturemovie"); }
     }
     public static string GetVersionUrlStr
     {
