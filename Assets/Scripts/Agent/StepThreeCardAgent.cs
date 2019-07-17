@@ -4,13 +4,13 @@ using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Net.Sockets;
-using System.Net;
-using System.Threading;
-using System.IO;
 
 public class StepThreeCardAgent : CardBaseAgent
 {
@@ -38,8 +38,9 @@ public class StepThreeCardAgent : CardBaseAgent
     SocketManager socketioManager;
     //public delegate void OnCamfiFileAddHandler(string fileurl);
     //public event OnCamfiFileAddHandler CamfiFileAdd;
+    private bool isReceive = false;
 
-
+    private bool flag;
 
     private void Reset() {
         _countDownNum = 3;
@@ -166,13 +167,17 @@ public class StepThreeCardAgent : CardBaseAgent
         if (response.StatusCode == 200)
         {
             //获取照片成功
+            Debug.Log("获取照片成功");
             _previewRawImage.texture = response.DataAsTexture2D;
+        }   else
+        {
+            Debug.Log("获取照片失败：" + response.StatusCode + response.Data);
+
         }
     }
 
     public void StartLiveShow()
     {
-        Debug.Log("开始实时取景");
         HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StartLiveShowUrlStr), HTTPMethods.Get, StartLiveShowRequestFinished);
         request.Send();
     }
@@ -182,7 +187,6 @@ public class StepThreeCardAgent : CardBaseAgent
 
     void StartLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
     {
-        Debug.Log("StartLiveShowRequestFinished! Text received: " + response.StatusCode);
         if (response.StatusCode == 200)
         {
             Debug.Log("开始实时取景成功");
@@ -191,90 +195,67 @@ public class StepThreeCardAgent : CardBaseAgent
             {
                 mediaSocket.Close();
             }
-            //filePath = Application.persistentDataPath + "/media.txt";
-            //Debug.Log("文件保存路径：" + filePath);
-            //if (File.Exists(filePath))
-            //{
-            //    File.Delete(filePath);
-            //}
+            
             mediaSocket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             mediaSocket.Connect(IPAddress.Parse("192.168.9.67"), 890);
             mediaThread = new Thread(SocketReceivce);
+            mediaThread.IsBackground = true;
             mediaThread.Start();
+            isReceive = true;
+        }   else
+        {
+            Debug.Log("开始实时取景失败：" + response.StatusCode);
         }
     }
 
     bool soi = false;
-    List<byte> photoBytes;
+    List<byte> photoBytes = new List<byte>();
     private bool isShowImage;
+    List<byte> bytes = new List<byte>();
     void SocketReceivce()
     {
-        while (true)
+        photoBytes = new List<byte>();
+        while (isReceive)
         {
-            byte[] data = new byte[1024];
+
+            byte[] data = new byte[1024*1024];
             int len = mediaSocket.Receive(data);
             if (len > 0)
             {
-                //StreamWriter sw;
-                //FileInfo fi = new FileInfo(filePath);
-                //if (File.Exists(filePath))
-                //{
-                //    sw = fi.AppendText();
-                //}   else
-                //{
-                //    sw = fi.CreateText();
-                //}
-                //sw.Write(str);
-                //sw.Close();
-                //sw.Dispose();
+                //收到数据
 
-                string str = BitConverter.ToString(data);
-                Debug.Log(str);
-                string[] chars = str.Split('-');
+                
+                //Debug.Log("返回数据：" + BitConverter.ToString(data));
 
-                //char[] chars = new char[strs.Length];
-
-                //for (int i=0; i< strs.Length; i++)
-                //{
-                //    chars[i] = strs[i][0];
-                //}
-                //foreach(char s in chars)
-                //{
-                //    Debug.Log(s);
-                //}
-
-                //foreach (char s in chars)
-                //{
-                //    Debug.Log(s);
-                //}
-                //Debug.Log(chars.Length);
+                //开始结束下标
                 int start = -1;
                 int end = -1;
-
-                for (int i=0; i<chars.Length-1; i++)
+                for (int i=0; i<data.Length-1; i++)
                 {
-                    //Debug.Log(chars[i]);
-                    if (chars[i] == "FF")
+                    if (data[i] == 0xff)
                     {
-                        if (i != chars.Length-1 && chars[i+1] == "D8")
+                        if (i != data.Length-1 && data[i+1] == 0xd8)
                         {
                             soi = true;
                             start = i;
                         }
                     }
-                    if (chars[i] == "FF")
+                    if (data[i] == 0xff)
                     {
-                        if (i != chars.Length - 1 && chars[i + 1] == "D9")
+                        if (i != data.Length-1 && data[i+1] == 0xd9)
                         {
                             end = i;
                             soi = false;
                         }
-                    }                   
+                    }
                 }
-                isShowImage = false;
+                //Debug.Log("start:" + start + "---" + "end:" + end);
+
+
+                
                 if (soi && (end == -1 && start == -1))
                 {
-                    for (int i=0; i<data.Length; i++)
+                    for (int i=0; i< data.Length; i++)
                     {
                         photoBytes.Add(data[i]);
                     }
@@ -284,8 +265,9 @@ public class StepThreeCardAgent : CardBaseAgent
                     for (int i=0; i<end+2; i++)
                     {
                         photoBytes.Add(data[i]);
-                        isShowImage = true;
                     }
+                    isShowImage = true;
+                    bytes = photoBytes;
                     photoBytes = new List<byte>();
                     for (int i=start; i< data.Length-start; i++)
                     {
@@ -299,6 +281,7 @@ public class StepThreeCardAgent : CardBaseAgent
                         photoBytes.Add(data[i]);
                     }
                     isShowImage = true;
+                    bytes = photoBytes;
                     photoBytes = new List<byte>();
                 }
                 else if (soi && (start > -1) && (end == -1))
@@ -307,17 +290,10 @@ public class StepThreeCardAgent : CardBaseAgent
                     {
                         photoBytes.Add(data[i]);
                     }
-                }
-                
+                }              
+            
             }
         }
-    }
-
-    private void ShowImage()
-    {
-        Texture2D texture = new Texture2D(500, 500);
-        texture.LoadImage(photoBytes.ToArray());
-
     }
 
     private static string byteToHexStr(byte[] bytes, int length)
@@ -335,17 +311,18 @@ public class StepThreeCardAgent : CardBaseAgent
 
     public void StopLiveShow()
     {
-        Debug.Log("关闭视频流");
         HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StopLiveShowUrlStr), HTTPMethods.Get, StopLiveShowRequestFinished);
         request.Send();
     }
 
     void StopLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
     {
-        Debug.Log("StopLiveShowRequestFinished! Text received: " + response.StatusCode);
         if (response.StatusCode == 200)
         {
-            Debug.Log("关闭视频流");          
+            Debug.Log("关闭视频流成功");          
+        }   else
+        {
+            Debug.Log("关闭视频流失败：" + response.StatusCode);
         }
     }
 
@@ -476,14 +453,9 @@ public class StepThreeCardAgent : CardBaseAgent
             _beginFlowComplete = true;
         }
 
-
-
         if (_showPreview) {
             ShowPreview();
         }
-
-
-
 
     }
 
@@ -550,8 +522,6 @@ public class StepThreeCardAgent : CardBaseAgent
         _shootFlowStatus = ShootFlowStatus.ShootCompleted;
     }
 
-
-
     /// <summary>
     /// 拍摄流程 - 拍摄后处理
     /// </summary>
@@ -591,12 +561,47 @@ public class StepThreeCardAgent : CardBaseAgent
     /// </summary>
     private void ShowPreview() {
         //Debug.Log("模拟预览功能");
+        Debug.Log("实时取景中...");
         if (isShowImage)
         {
-            Debug.Log("实时取景中...");
             ShowImage();
         }
+    }
 
+    private void ShowImage()
+    {
+            byte[] data = bytes.ToArray();
+
+        //Debug.Log("照片：" + BitConverter.ToString(data));
+        Texture2D texture = new Texture2D(100, 100);
+        texture.LoadImage(data);
+        _previewRawImage.texture = texture;
+
+        //if (!flag)
+        //{
+        //    flag = true;
+        //    byte[] data = bytes.ToArray();
+
+        //    FileStream fs = File.Open(Application.dataPath + "/1.txt", FileMode.Create);
+        //    BinaryWriter writer = new BinaryWriter(fs);
+        //    writer.Write(data);
+        //    fs.Close();
+        //    TestShowFromFile();
+        //    Debug.Log("保存完成");
+        //    //File.WriteAllText(Application.dataPath + "/2.txt", BitConverter.ToString(data));
+
+        //    return;
+
+        //}
+
+    }
+
+    void TestShowFromFile()
+    {
+        Debug.Log("测试取图");
+        Texture2D texture = new Texture2D(100, 100);
+        texture.LoadImage(File.ReadAllBytes(Application.dataPath + "/1.txt"));
+        _previewRawImage.texture = texture;
     }
 
     void OnDisable()
@@ -605,12 +610,23 @@ public class StepThreeCardAgent : CardBaseAgent
         {
             socketioManager.Close();
         }
-        if (mediaSocket != null)
-        {
-            mediaSocket.Close();
-        }
+        isReceive = false;
         StopLiveShow();
     }
 
-   
+    void OnEnable()
+    {
+        if (socketioManager != null)
+        {
+            socketioManager.Open();
+        }
+
+        if (_cameraIsPrepared)
+        {
+            StartLiveShow();
+        }
+    }
+
+
+
 }
