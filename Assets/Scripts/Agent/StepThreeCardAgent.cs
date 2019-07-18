@@ -86,6 +86,7 @@ public class StepThreeCardAgent : CardBaseAgent
  
 
         SocketOptions option = new SocketOptions();
+        
 
         socketioManager = new SocketManager(new Uri(CamfiServerInfo.SockIOUrlStr));
         InitSocketIOManager();
