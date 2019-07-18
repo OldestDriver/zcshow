@@ -30,7 +30,7 @@ public class StepFiveCardAgent : CardBaseAgent
     private string h5_api = "https://h5.pixelplus.cc";
     private int EVENT_ID = 49;
 
-    private string message_id;
+    private int message_id;
 
     private void Reset()
     {
@@ -52,7 +52,7 @@ public class StepFiveCardAgent : CardBaseAgent
 
         // 获取小程序码
         GetErCode();
-
+        //_erCodeIsGenerated = true;
         CompletePrepare();
     }
 
@@ -127,6 +127,14 @@ public class StepFiveCardAgent : CardBaseAgent
     {
         _resultRect.gameObject.SetActive(true);
         _loadingRect.gameObject.SetActive(false);
+        emailInput.ActivateInputField();
+    }
+
+    //开始输入邮件
+    public void StartInputEmail()
+    {
+        Debug.Log(111);
+        FindObjectOfType<CustomKeyboard>().Show();
     }
 
 
@@ -145,10 +153,6 @@ public class StepFiveCardAgent : CardBaseAgent
         // 上传视频功能
         //获取token
         GetToken();
-
-
-        // 小程序码获取功能
-        //StartCoroutine(DoMockGenerate());
 
     }
 
@@ -172,7 +176,7 @@ public class StepFiveCardAgent : CardBaseAgent
         }
         else
         {
-            Debug.Log("请求token失败");
+            Debug.Log("请求token失败" + data["message"]);
             Error();
         }
     }
@@ -203,11 +207,11 @@ public class StepFiveCardAgent : CardBaseAgent
             //上传视频成功
             string videoUrl = (string)data["data"]["url"];
             UploadUrl(videoUrl);
-            Debug.Log("上传视频成功:" + videoUrl);
+            //Debug.Log("上传视频成功:" + videoUrl);
         }
         else
         {
-            Debug.Log("上传视频失败");
+            Debug.Log("上传视频失败" + data["message"]);
             Error();
         }
     }
@@ -226,52 +230,67 @@ public class StepFiveCardAgent : CardBaseAgent
         if ((bool)data["status"])
         {
             //上传文件路径成功
-            Debug.Log(response.DataAsText);
-            return;
-            message_id = (string)data["data"]["options"]["mail"]["message"];
+            //Debug.Log(response.DataAsText);
+            message_id = (int)data["data"]["options"]["mail"]["message"];
             string code = (string)data["data"]["code"];
             GetQRCode(code);
         }
         else
         {
-            Debug.Log("上传文件路径成功");
+            Debug.Log("上传文件路径失败" + data["message"]);
             Error();
         }
     }
 
     void GetQRCode(string code)
     {
-        HTTPRequest request = new HTTPRequest(new Uri(h5_api + "/api/wxapp/getFileQrcode/" + code + "?type=beat_2"), HTTPMethods.Get, GetQRCodeRequestFinished);
+        HTTPRequest request = new HTTPRequest(new Uri(h5_api + "/api/wxapp/getFileQrcode/code"), HTTPMethods.Get, GetQRCodeRequestFinished);
+        request.AddField("type", "beta_2");
+        request.AddField("code", code);
         request.Send();
     }
 
     void GetQRCodeRequestFinished(HTTPRequest request, HTTPResponse response)
     {
-        _qrCode.texture = response.DataAsTexture2D;
-        _erCodeIsGenerated = true;
+        if (response.StatusCode == 200)
+        {
+            _qrCode.texture = response.DataAsTexture2D;
+            _erCodeIsGenerated = true;
+        }   else
+        {
+            Debug.Log(response.DataAsText);
+            Error();
+        }
     }
-
-    IEnumerator DoMockGenerate()
-    {
-
-        Debug.Log("获取小程序码过程");
-        yield return new WaitForSeconds(5);
-        _erCodeIsGenerated = true;
-    }
-
 
     private void DoSendEmail() {
         _sendingEmail = true;
 
-        StartCoroutine(DoMockSendEmail());
+        Debug.Log("发送邮件！！！");
+        //return;
+        SendEmain();
     }
 
-    IEnumerator DoMockSendEmail()
+    void SendEmain()
     {
-
-        Debug.Log("模拟发送邮件");
-        yield return new WaitForSeconds(3);
-        _sendingEmail = false;
+        HTTPRequest request = new HTTPRequest(new Uri(api + "/api/mail/messages/file_message/send"), HTTPMethods.Post, SendEmainRequestFinished);
+        request.AddField("email", emailInput.text);
+        request.AddField("file_message", message_id.ToString());
+        request.Send();
     }
 
+    void SendEmainRequestFinished(HTTPRequest request, HTTPResponse response)
+    {
+        JsonData data = JsonMapper.ToObject(response.DataAsText);
+        if ((bool)data["status"])
+        {
+            //发送邮件成功
+            Debug.Log("发送邮件成功");
+        }
+        else
+        {
+            Debug.Log("发送邮件失败" + data["message"]);
+            Error();
+        }
+    }
 }
