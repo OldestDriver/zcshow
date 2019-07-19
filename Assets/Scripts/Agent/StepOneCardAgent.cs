@@ -8,11 +8,11 @@ using UnityEngine.Video;
 public class StepOneCardAgent : CardBaseAgent
 {
     // 视频幕布
-    [SerializeField,Header("UI")] RawImage _image;
-    [SerializeField] VideoPlayer videoPlayer;
+    //[SerializeField,Header("UI")] RawImage _image;
+    //[SerializeField] VideoPlayer videoPlayer;
 
 
-    private bool _videoIsPrepared = false;  // 视频加载情况标识符
+    //private bool _videoIsPrepared = false;  // 视频加载情况标识符
 
 
     void Reset() {
@@ -30,15 +30,7 @@ public class StepOneCardAgent : CardBaseAgent
     public override void DoPrepare() {
         Reset();
 
-        // 加载视频
-        if (!_videoIsPrepared)
-        {
-            LoadVideo();
-        }
-        else {
-            CompletePrepare();
-        }
-
+        CompletePrepare();
     }
 
     public override void DoRunIn()
@@ -49,9 +41,6 @@ public class StepOneCardAgent : CardBaseAgent
         // 显示在首个
         GetComponent<RectTransform>().SetAsLastSibling();
 
-        // 运行视频
-        _image.texture = videoPlayer.texture;
-        videoPlayer.Play();
 
         CompleteRunIn();
     }
@@ -67,7 +56,6 @@ public class StepOneCardAgent : CardBaseAgent
 
     public override void DoRunOut()
     {
-        videoPlayer.Stop();
         CompleteRunOut();
     }
 
@@ -81,25 +69,6 @@ public class StepOneCardAgent : CardBaseAgent
         _NextCard?.DoActive();
         CompleteDoEnd();
         gameObject.SetActive(false);
-    }
-
-
-
-    private void LoadVideo() {
-        StartCoroutine(PrepareVideo());
-    }
-
-    //step1
-    //播放视频
-    IEnumerator PrepareVideo()
-    {
-        videoPlayer.Prepare();
-        while (!videoPlayer.isPrepared)
-        {
-            yield return new WaitForSeconds(1);
-            break;
-        }
-        _videoIsPrepared = true;
     }
 
 

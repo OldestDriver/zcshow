@@ -9,7 +9,7 @@ public class StepTwoCardAgent : CardBaseAgent
 {
 
     //第二步
-    [SerializeField,Header("UI")] private Text _introduceText;
+    //[SerializeField,Header("UI")] private Text _introduceText;
 
     void Reset()
     {
