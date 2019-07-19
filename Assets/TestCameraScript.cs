@@ -45,8 +45,8 @@ public class TestCameraScript : MonoBehaviour
         Reset();
 
         //      连接卡菲
-        _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,
-            OnConnectCameraSuccess,OnConnectCameraFailed, OnFileAdd);
+        //_cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,
+        //    OnConnectCameraSuccess,OnConnectCameraFailed, OnFileAdd);
 
     }
 
@@ -72,7 +72,7 @@ public class TestCameraScript : MonoBehaviour
         {
 
             Debug.Log("SHOOT");
-            _cameraManager.Shoot(OnShootSuccess, OnShootError);
+            //_cameraManager.Shoot(OnShootSuccess, OnShootError);
         }
 
         //if (videoDecodeTasks.Count > 0) {

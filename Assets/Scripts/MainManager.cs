@@ -11,6 +11,7 @@ public class MainManager : MonoBehaviour
     [SerializeField] CardBaseAgent card5;
 
     [SerializeField] CameraManager _cameraManager;
+    [SerializeField] VideoFactoryAgent _videoFactoryAgent;
 
     private List<CardBaseAgent> cards;
 
