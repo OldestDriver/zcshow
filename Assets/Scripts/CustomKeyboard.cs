@@ -36,7 +36,9 @@ public class CustomKeyboard : MonoBehaviour
     void SetInputFieldText()
     {
         emailInput.text = word;
+
     }
+
 
     //显示键盘
     public void Show()
@@ -46,7 +48,7 @@ public class CustomKeyboard : MonoBehaviour
             word = "";
             SetInputFieldText();
             //CapitalClick();
-            GetComponent<RectTransform>().DOAnchorPosY(-420, 0.3f);
+            GetComponent<RectTransform>().DOAnchorPosY(-100, 0.3f);
             isShow = true;
         }
     }

@@ -29,25 +29,26 @@ public class MainManager : MonoBehaviour
     void Update()
     {
 
-        //if (Input.GetKeyDown(KeyCode.Alpha1)){
-        //    Reset();
-        //    card1.DoActive();
-        //}
-        //if (Input.GetKeyDown(KeyCode.Alpha2))
-        //{
-        //    Reset();
-        //    card2.DoActive();
-        //}
-        //if (Input.GetKeyDown(KeyCode.Alpha3))
-        //{
-        //    Reset();
-        //    card3.DoActive();
-        //}
-        //if (Input.GetKeyDown(KeyCode.Alpha4))
-        //{
-        //    Reset();
-        //    card4.DoActive();
-        //}
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            Reset();
+            card1.DoActive();
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            Reset();
+            card2.DoActive();
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            Reset();
+            card3.DoActive();
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            Reset();
+            card4.DoActive();
+        }
         if (Input.GetKeyDown(KeyCode.Alpha5))
         {
             Reset();
