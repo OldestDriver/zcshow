@@ -8,6 +8,7 @@ using BestHTTP;
 using System;
 using LitJson;
 using System.IO;
+using System.Text;
 
 public class StepFiveCardAgent : CardBaseAgent
 {
@@ -185,7 +186,7 @@ public class StepFiveCardAgent : CardBaseAgent
     {
 
         HTTPRequest request = new HTTPRequest(new Uri(qiniu_api), HTTPMethods.Post, UploadVideoRequestFinished);
-        request.AddBinaryData("file", GetVideoData(Application.dataPath + "/Files/1.mp4"));
+        request.AddBinaryData("file", GetVideoData(Application.dataPath + "/Out/1.mp4"));
         request.AddField("token", token);
         request.Send();
     }
@@ -272,9 +273,26 @@ public class StepFiveCardAgent : CardBaseAgent
         SendEmain();
     }
 
+
     void SendEmain()
     {
         HTTPRequest request = new HTTPRequest(new Uri(api + "/api/mail/messages/" + message_id + "/send"), HTTPMethods.Post, SendEmainRequestFinished);
+
+
+        request.AddHeader("Content-Type", "application/json");
+        request.AddHeader("Accept", "application/json");
+
+        string address = "873074332@qq.com";
+
+        var fromJson = @"
+            {
+                ""to""     : [{""email"" : """ + 
+                address 
+                + @"""}]}";
+
+        request.RawData = Encoding.UTF8.GetBytes(fromJson);
+
+
 
         request.Send();
     }
