@@ -8,6 +8,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TestCameraScript : MonoBehaviour
 {
@@ -19,11 +20,20 @@ public class TestCameraScript : MonoBehaviour
 
     private HTTPRequest _GetCameraConfigRequest;
 
+    bool _testLock = false;
+
+
+    //Queue<VideoDecodeTask> videoDecodeTasks = new Queue<VideoDecodeTask>();
+    
+
+
+    [SerializeField] RawImage _screen;
 
 
     private void Reset() {
         _cameraAddSuccess = false;
         _camfiConnectSuccess = false;
+        //videoDecodeTasks = new Queue<VideoDecodeTask>();
     }
 
 
@@ -59,6 +69,10 @@ public class TestCameraScript : MonoBehaviour
 
             GetCameraConfig();
         }
+
+        //if (videoDecodeTasks.Count > 0) {
+        //    videoDecodeTasks.Dequeue().Run();
+        //}
 
     }
 
@@ -97,20 +111,9 @@ public class TestCameraScript : MonoBehaviour
         if (RequestIsSuccess(request, response))
         {
             if (response.StatusCode == 200) {
-                Debug.Log("成功创建TCP服务器，端口为890");
 
-                //socketCaptureMovieManager = new SocketManager(new Uri(CamfiServerInfo.CaptureMovieSocketStr));
-                //socketCaptureMovieManager.Socket.On("frame", onReceiveVideoStream);
-                //socketCaptureMovieManager.Socket.On("error", onReceiveError);
-
-                //socketCaptureMovieManager.Open();
-
-                mediaSocket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
-                mediaSocket.Connect(IPAddress.Parse("192.168.9.67"), 890);
-                mediaThread = new Thread(SocketReceive);
-                mediaThread.IsBackground = true;
-                mediaThread.Start();
-
+                VideoReceiver videoReceiver = new VideoReceiver(onVideoFramePrepared);
+                videoReceiver.Receive();
 
             }
             else {
@@ -122,16 +125,24 @@ public class TestCameraScript : MonoBehaviour
         }
     }
 
-    void SocketReceive()
+    void onVideoFramePrepared(byte[] content)
     {
-        while (true) {
-            byte[] data = new byte[1024 * 1024];
-            int len = mediaSocket.Receive(data);
-            Debug.Log("len : " + len);
-            Debug.Log("BitConverter.ToString(data) : " + BitConverter.ToString(data));
+        Debug.Log("On Video Frame Prepared");
 
-            SaveBytesToFile(data);
+
+        if (!_testLock) {
+            _testLock = true;
+
+            //VideoDecodeTask videoDecodeTask = new VideoDecodeTask(content, _screen);
+            //videoDecodeTasks.Enqueue(videoDecodeTask);
+
+            ScreenFactoryInvoker.AddCommand(new VideoDecodeTask(content, _screen));
+
+
+             _testLock = false;
+
         }
+
     }
 
     int fid = 0;
@@ -145,35 +156,6 @@ public class TestCameraScript : MonoBehaviour
         file.Close();
         fid++;
     }
-
-
-
-
-    void onReceiveVideoStream(Socket socket, Packet packet, params object[] args) {
-        Debug.Log("frame");
-    }
-     void onReceiveError(Socket socket, Packet packet, params object[] args) {
-        Debug.Log("onReceiveError");
-        Debug.Log(args.ToString());
-        //Debug.Log(socket.);
-
-       
-
-            
-
-        //Debug.Log(packet.Payload);
-
-    }
-
-    void SocketReceivce()
-    {
-        // SocketReceivce
-    }
-
-
-
-
-
 
 
     #region Socket Manager
