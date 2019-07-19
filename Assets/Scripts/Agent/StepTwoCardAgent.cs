@@ -9,7 +9,7 @@ public class StepTwoCardAgent : CardBaseAgent
 {
 
     //第二步
-    [SerializeField,Header("UI")] private Text _introduceText;
+    //[SerializeField,Header("UI")] private Text _introduceText;
 
     void Reset()
     {
@@ -21,7 +21,7 @@ public class StepTwoCardAgent : CardBaseAgent
     public override void DoPrepare() {
         Reset();
 
-        _introduceText.text = "";
+        //_introduceText.text = "";
         CompletePrepare();
     }
 
@@ -30,7 +30,7 @@ public class StepTwoCardAgent : CardBaseAgent
         Debug.Log("场景2进入");
         // 显示在首个
         GetComponent<RectTransform>().SetAsLastSibling();
-        _introduceText.DOText("请连续拍摄三张照片", 3f);
+        //_introduceText.DOText("请连续拍摄三张照片", 3f);
         CompleteRunIn();
     }
 

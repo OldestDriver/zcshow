@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -35,7 +33,7 @@ public class VideoReceiver
 
 
 
-    private System.Net.Sockets.Socket mediaSocket;
+    private Socket mediaSocket;
     private Thread mediaThread;
 
 
@@ -57,10 +55,15 @@ public class VideoReceiver
     /// 开始接收
     /// </summary>
     public void Receive() {
-
         mediaSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         mediaSocket.BeginConnect(IPAddress.Parse("192.168.9.67"), 890, new AsyncCallback(ConnectCallBack), mediaSocket);
+    }
 
+    /// <summary>
+    ///     关闭 Socket
+    /// </summary>
+    public void Close() {
+        mediaSocket.Close();
     }
 
 
