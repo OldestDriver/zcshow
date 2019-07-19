@@ -21,6 +21,8 @@ public class StepThreeCardAgent : CardBaseAgent
     [SerializeField] private Text _titleText;//标题
     [SerializeField] private RawImage _previewRawImage;//照片
 
+    private Color _color_dot_active = new Color(79 / 255,14 / 255,16 /255);
+    private Color _color_dot = new Color(204 / 255,32 / 255,39 / 255);
 
     private int _countDownNum = 3;//倒计时数字
     private int _totalPicture = 0 ;//图片总数
@@ -29,6 +31,11 @@ public class StepThreeCardAgent : CardBaseAgent
 
     private bool _showPreview = false; // 显示预览
 
+
+    private bool _connectCamfiSuccess = false;  // Cam-fi 连接状态
+    private bool _connectCameraSuccess = false; //  相机 连接状态
+    private bool _connectLiveShowSuccess = false;   //  实时取景  连接状态
+    
 
     private bool _doCountDownLock = false;
     private bool _doShootLock = false;
@@ -79,274 +86,10 @@ public class StepThreeCardAgent : CardBaseAgent
     /// 准备阶段
     /// </summary>
     public override void DoPrepare() {
-        //_introduceText.text = "";
-
         Reset();
-        
- 
-
-        SocketOptions option = new SocketOptions();
-        
-
-        socketioManager = new SocketManager(new Uri(CamfiServerInfo.SockIOUrlStr));
-        InitSocketIOManager();
-
-        try
-        {
-            socketioManager.Open();
-
-
-        }
-        catch (Exception e)
-        {
-            Debug.Log("SocketIO Open 捕获到了异常" + e.ToString());
-        }
-
         CompletePrepare();
-
     }
-
     
-    #region Manager的一些方法
-    void InitSocketIOManager()
-    {
-        socketioManager.Socket.On("connect", OnConnected);
-        socketioManager.Socket.On("disconnect", OnDisConnected);
-        socketioManager.Socket.On("camera_remove", OnCameraRemove);
-        socketioManager.Socket.On("camera_add", OnCameraAdd);
-        socketioManager.Socket.On("file_added", OnFileAdded);
-
-    }
-    #endregion
-
-    #region CamFi服务器SocketIO事件回调函数
-    void OnConnected(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
-    {
-        Debug.LogWarning("与CamFi的SokectIO连接建立");
-    }
-    void OnDisConnected(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
-    {
-        Debug.LogWarning("与CamFi的SokectIO连接 断开");
-    }
-    void OnCameraAdd(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
-    {
-        Debug.LogWarning("CamFi连接了相机");
-
-        _cameraIsPrepared = true;
-
-        StartLiveShow();
-
-    }
-
-    void OnCameraRemove(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
-    {
-        Debug.LogWarning("CamFi丢失相机连接");
-
-        _cameraIsPrepared = false;
-    }
-    void OnFileAdded(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
-    {
-
-        string pathInCamfi = args[0].ToString();
-        Debug.Log("照片添加，其Url: " + pathInCamfi);
-        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.CamFiGetRawDataByEnCodeUrlStr(UrlEncode(pathInCamfi))), HTTPMethods.Get, GetRawDataFinished);
-        request.Send();
-    }
-    void OnLiveshowError(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
-    {
-        Debug.LogWarning("实时取景发送错误");
-    }
-    void OnLiveshowData(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
-    {
-        print(packet.AttachmentCount);
-    }
-    #endregion
-
-    void GetRawDataFinished(HTTPRequest request, HTTPResponse response)
-    {
-        Debug.Log("GetRawDataFinished! Text received: " + response.StatusCode + response.Data);
-        if (response.StatusCode == 200)
-        {
-            //获取照片成功
-            Debug.Log("获取照片成功");
-            _previewRawImage.texture = response.DataAsTexture2D;
-        }   else
-        {
-            Debug.Log("获取照片失败：" + response.StatusCode + response.Data);
-
-        }
-    }
-
-    public void StartLiveShow()
-    {
-        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StartLiveShowUrlStr), HTTPMethods.Get, StartLiveShowRequestFinished);
-        request.Send();
-    }
-
-    private System.Net.Sockets.Socket mediaSocket;
-    private Thread mediaThread;
-
-    void StartLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
-    {
-        if (response.StatusCode == 200)
-        {
-            Debug.Log("开始实时取景成功");
-            
-            if (mediaSocket != null)
-            {
-                mediaSocket.Close();
-            }
-            
-            mediaSocket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            mediaSocket.Connect(IPAddress.Parse("192.168.9.67"), 890);
-            mediaThread = new Thread(SocketReceivce);
-            mediaThread.IsBackground = true;
-            mediaThread.Start();
-            isReceive = true;
-        }   else
-        {
-            Debug.Log("开始实时取景失败：" + response.StatusCode);
-        }
-    }
-
-    bool soi = false;
-    List<byte> photoBytes = new List<byte>();
-    private bool isShowImage;
-    List<byte> bytes = new List<byte>();
-    void SocketReceivce()
-    {
-        photoBytes = new List<byte>();
-        while (isReceive)
-        {
-
-            byte[] data = new byte[1024*1024];
-            int len = mediaSocket.Receive(data);
-            if (len > 0)
-            {
-                //收到数据
-
-                
-                //Debug.Log("返回数据：" + BitConverter.ToString(data));
-
-                //开始结束下标
-                int start = -1;
-                int end = -1;
-                for (int i=0; i<data.Length-1; i++)
-                {
-                    if (data[i] == 0xff)
-                    {
-                        if (i != data.Length-1 && data[i+1] == 0xd8)
-                        {
-                            soi = true;
-                            start = i;
-                        }
-                    }
-                    if (data[i] == 0xff)
-                    {
-                        if (i != data.Length-1 && data[i+1] == 0xd9)
-                        {
-                            end = i;
-                            soi = false;
-                        }
-                    }
-                }
-                //Debug.Log("start:" + start + "---" + "end:" + end);
-
-
-                
-                if (soi && (end == -1 && start == -1))
-                {
-                    for (int i=0; i< data.Length; i++)
-                    {
-                        photoBytes.Add(data[i]);
-                    }
-                }   
-                else if ((start > -1) && (end > -1))
-                {
-                    for (int i=0; i<end+2; i++)
-                    {
-                        photoBytes.Add(data[i]);
-                    }
-                    isShowImage = true;
-                    bytes = photoBytes;
-                    photoBytes = new List<byte>();
-                    for (int i=start; i< data.Length-start; i++)
-                    {
-                        photoBytes.Add(data[i]);
-                    }
-                }
-                else if ((start == -1) && (end > -1))
-                {
-                    for (int i=0; i<end+2; i++)
-                    {
-                        photoBytes.Add(data[i]);
-                    }
-                    isShowImage = true;
-                    bytes = photoBytes;
-                    photoBytes = new List<byte>();
-                }
-                else if (soi && (start > -1) && (end == -1))
-                {
-                    for (int i = start; i < data.Length - start; i++)
-                    {
-                        photoBytes.Add(data[i]);
-                    }
-                }              
-            
-            }
-        }
-    }
-
-    private static string byteToHexStr(byte[] bytes, int length)
-    {
-        string returnStr = "";
-        if (bytes != null)
-        {
-            for (int i = 0; i < length; i++)
-            {
-                returnStr += bytes[i].ToString("X2");
-            }
-        }
-        return returnStr;
-    }
-
-    public void StopLiveShow()
-    {
-        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StopLiveShowUrlStr), HTTPMethods.Get, StopLiveShowRequestFinished);
-        request.Send();
-    }
-
-    void StopLiveShowRequestFinished(HTTPRequest request, HTTPResponse response)
-    {
-        if (response.StatusCode == 200)
-        {
-            Debug.Log("关闭视频流成功");          
-        }   else
-        {
-            Debug.Log("关闭视频流失败：" + response.StatusCode);
-        }
-    }
-
-    public static string UrlEncode(string str)
-    {
-        StringBuilder sb = new StringBuilder();
-        byte[] byStr = System.Text.Encoding.UTF8.GetBytes(str); //默认是System.Text.Encoding.Default.GetBytes(str)
-        for (int i = 0; i < byStr.Length; i++)
-        {
-            sb.Append(@"%" + Convert.ToString(byStr[i], 16));
-        }
-
-        return (sb.ToString());
-    }
-
-    #region 向CamFi 发送RESTAPI的函数
-    public void TakePhoto()
-    {
-        Debug.Log("向Camfi下达拍照指令");
-        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.TakePictureUrlStr), HTTPMethods.Get);
-        request.Send();
-    }
-    #endregion
 
     public override void DoRunIn()
     {
@@ -563,7 +306,7 @@ public class StepThreeCardAgent : CardBaseAgent
     private void ShowPreview() {
         //Debug.Log("模拟预览功能");
         Debug.Log("实时取景中...");
-        if (isShowImage)
+        if (_showPreview)
         {
             ShowImage();
         }
@@ -571,49 +314,11 @@ public class StepThreeCardAgent : CardBaseAgent
 
     private void ShowImage()
     {
-            byte[] data = bytes.ToArray();
 
-        //Debug.Log("照片：" + BitConverter.ToString(data));
-        Texture2D texture = new Texture2D(100, 100);
-        texture.LoadImage(data);
-        _previewRawImage.texture = texture;
-
-        //if (!flag)
-        //{
-        //    flag = true;
-        //    byte[] data = bytes.ToArray();
-
-        //    FileStream fs = File.Open(Application.dataPath + "/1.txt", FileMode.Create);
-        //    BinaryWriter writer = new BinaryWriter(fs);
-        //    writer.Write(data);
-        //    fs.Close();
-        //    TestShowFromFile();
-        //    Debug.Log("保存完成");
-        //    //File.WriteAllText(Application.dataPath + "/2.txt", BitConverter.ToString(data));
-
-        //    return;
-
-        //}
 
     }
 
-    void TestShowFromFile()
-    {
-        Debug.Log("测试取图");
-        Texture2D texture = new Texture2D(100, 100);
-        texture.LoadImage(File.ReadAllBytes(Application.dataPath + "/1.txt"));
-        _previewRawImage.texture = texture;
-    }
 
-    void OnDisable()
-    {
-        if (socketioManager != null)
-        {
-            socketioManager.Close();
-        }
-        isReceive = false;
-        StopLiveShow();
-    }
 
     void OnEnable()
     {
@@ -624,7 +329,7 @@ public class StepThreeCardAgent : CardBaseAgent
 
         if (_cameraIsPrepared)
         {
-            StartLiveShow();
+            //StartLiveShow();
         }
     }
 

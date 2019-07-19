@@ -13,12 +13,6 @@ public static class StreamVideoPlayer {
         //    初始化计时器
         System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
-        //    计时器操作
-        sw.Start();
-
-      
-
-
         if (texture2D == null) {
             texture2D = new Texture2D(200, 200);
         }
@@ -28,9 +22,6 @@ public static class StreamVideoPlayer {
             flag = true;
             screen.texture = texture2D;
         }
-
-        sw.Stop();
-        Debug.Log("Time : " + sw.ElapsedMilliseconds / 1000f);
 
     }
 

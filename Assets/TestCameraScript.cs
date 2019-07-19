@@ -18,6 +18,8 @@ public class TestCameraScript : MonoBehaviour
     private bool _cameraAddSuccess = false;
     private bool _camfiConnectSuccess = false;
 
+    [SerializeField] CameraManager _cameraManager;
+
     private HTTPRequest _GetCameraConfigRequest;
 
     bool _testLock = false;
@@ -43,12 +45,8 @@ public class TestCameraScript : MonoBehaviour
         Reset();
 
         //      连接卡菲
-        socketioManager = new SocketManager(new Uri(CamfiServerInfo.SockIOUrlStr));
-
-        InitSocketIOManager();
-
-        socketioManager.Open();
-
+        _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,
+            OnConnectCameraSuccess,OnConnectCameraFailed, OnFileAdd);
 
     }
 
@@ -70,11 +68,34 @@ public class TestCameraScript : MonoBehaviour
             GetCameraConfig();
         }
 
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+
+            Debug.Log("SHOOT");
+            _cameraManager.Shoot(OnShootSuccess, OnShootError);
+        }
+
         //if (videoDecodeTasks.Count > 0) {
         //    videoDecodeTasks.Dequeue().Run();
         //}
-
     }
+
+
+    private void OnShootSuccess(String str) {
+        Debug.Log("OnShootSuccess : " + str);
+    }
+
+    private void OnShootError(String str)
+    {
+        Debug.Log("OnShootError : " + str);
+    }
+
+    private void OnFileAdd(String str)
+    {
+        Debug.Log("OnFileAdd : " + str);
+    }
+
+
 
     /// <summary>
     ///     初始化实时取景
@@ -213,6 +234,28 @@ public class TestCameraScript : MonoBehaviour
     //    if (CamfiFileAdd != null) CamfiFileAdd.Invoke(fileUrl);
     //    Debug.Log("照片添加，其Url: " + pathInCamfi);
     //}
+
+    private void OnConnectCamfiSuccess() {
+        Debug.LogWarning("与CamFi的SokectIO连接");
+    }
+
+    private void OnConnectCamfiFailed()
+    {
+        Debug.LogWarning("与CamFi的SokectIO失败");
+    }
+
+    private void OnConnectCameraSuccess()
+    {
+        Debug.LogWarning("与 Camera 连接成功");
+    }
+
+    private void OnConnectCameraFailed()
+    {
+        Debug.LogWarning("与 Camera 连接失败");
+    }
+
+
+
     #endregion
 
 
