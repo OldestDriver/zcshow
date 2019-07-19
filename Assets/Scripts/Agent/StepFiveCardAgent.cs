@@ -133,7 +133,7 @@ public class StepFiveCardAgent : CardBaseAgent
     //开始输入邮件
     public void StartInputEmail()
     {
-        Debug.Log(111);
+        emailInput.ActivateInputField();
         FindObjectOfType<CustomKeyboard>().Show();
     }
 
