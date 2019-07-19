@@ -233,6 +233,7 @@ public class StepFiveCardAgent : CardBaseAgent
             //Debug.Log(response.DataAsText);
             message_id = (int)data["data"]["options"]["mail"]["message"];
             string code = (string)data["data"]["code"];
+            Debug.Log("message_id：" + message_id);
             GetQRCode(code);
         }
         else
@@ -273,9 +274,8 @@ public class StepFiveCardAgent : CardBaseAgent
 
     void SendEmain()
     {
-        HTTPRequest request = new HTTPRequest(new Uri(api + "/api/mail/messages/file_message/send"), HTTPMethods.Post, SendEmainRequestFinished);
-        request.AddField("email", emailInput.text);
-        request.AddField("file_message", message_id.ToString());
+        HTTPRequest request = new HTTPRequest(new Uri(api + "/api/mail/messages/" + message_id + "/send"), HTTPMethods.Post, SendEmainRequestFinished);
+
         request.Send();
     }
 
