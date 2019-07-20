@@ -16,16 +16,22 @@ public class StepThreeCardAgent : CardBaseAgent
 {
 
     //第三步
-    [SerializeField,Header("UI")] private Text _countdownText;
-    [SerializeField] private List<RawImage> _dots;//红点
+    [SerializeField, Header("UI")] private Text _countdownText;
     [SerializeField] private Text _titleText;//标题
     [SerializeField] private RawImage _previewRawImage;//照片
+    [SerializeField] private RawImage _previewPhoto;// 预览照片
+    [SerializeField] private RectTransform _preparePrevRect;    // 准备预览画面
 
-    private Color _color_dot_active = new Color(79 / 255,14 / 255,16 /255);
-    private Color _color_dot = new Color(204 / 255,32 / 255,39 / 255);
+    [SerializeField , Header("Dots")] private Color _color_dot_active;
+    [SerializeField] private Color _color_dot;
+    [SerializeField] private List<RawImage> _dots;//红点
+
+
+    [SerializeField, Header("Camera Manager")] CameraManager _cameraManager;
+    [SerializeField, Header("Video Factory Agent")] VideoFactoryAgent _videoFactoryAgent;
 
     private int _countDownNum = 3;//倒计时数字
-    private int _totalPicture = 0 ;//图片总数
+    private int _totalPicture = 0;//图片总数
     private bool _beginFlowComplete = false;
     private ShootFlowStatus _shootFlowStatus = ShootFlowStatus.Init;
 
@@ -35,16 +41,15 @@ public class StepThreeCardAgent : CardBaseAgent
     private bool _connectCamfiSuccess = false;  // Cam-fi 连接状态
     private bool _connectCameraSuccess = false; //  相机 连接状态
     private bool _connectLiveShowSuccess = false;   //  实时取景  连接状态
-    
+
 
     private bool _doCountDownLock = false;
     private bool _doShootLock = false;
     private bool _doHandleLock = false;
 
-    //拍照相关
-    SocketManager socketioManager;
-    //public delegate void OnCamfiFileAddHandler(string fileurl);
-    //public event OnCamfiFileAddHandler CamfiFileAdd;
+    private Texture2D _currentPhotoTexture;
+
+
     private bool isReceive = false;
 
     private bool flag;
@@ -68,11 +73,11 @@ public class StepThreeCardAgent : CardBaseAgent
 
     enum ShootFlowStatus {
         Init,
-        DoCountDown ,
-        CountDownCompleted ,
-        DoShoot ,
-        ShootCompleted ,
-        DoHandle ,
+        DoCountDown,
+        CountDownCompleted,
+        DoShoot,
+        ShootCompleted,
+        DoHandle,
         HandleCompleted,
         Finished
     }
@@ -89,13 +94,17 @@ public class StepThreeCardAgent : CardBaseAgent
         Reset();
         CompletePrepare();
     }
-    
+
 
     public override void DoRunIn()
     {
         Debug.Log("场景3进入");
         // 显示在首个
         GetComponent<RectTransform>().SetAsLastSibling();
+
+        // 获取实时取景
+        _cameraManager.InitLiveShow(OnConnectLiveShowSuccess,OnConnectLiveShowFailed, _previewRawImage);
+
         CompleteRunIn();
     }
 
@@ -124,6 +133,7 @@ public class StepThreeCardAgent : CardBaseAgent
 
     public override void DoRunOut()
     {
+        // 开始生成视频       
         CompleteRunOut();
     }
 
@@ -154,6 +164,7 @@ public class StepThreeCardAgent : CardBaseAgent
     private void BeginShootFlow() {
 
         if (_shootFlowStatus == ShootFlowStatus.Init) {
+            DoShootFlowInit();
             _shootFlowStatus = ShootFlowStatus.DoCountDown;
         }
 
@@ -204,6 +215,16 @@ public class StepThreeCardAgent : CardBaseAgent
     }
 
     /// <summary>
+    ///     拍摄流程 - 初始化
+    /// </summary>
+    private void DoShootFlowInit() {
+
+        Debug.Log("流程初始化 ： " + _totalPicture);
+
+        _previewPhoto.gameObject.SetActive(false);
+    }
+
+    /// <summary>
     /// 拍摄流程 - 倒计时
     /// </summary>
     private void DoCountDownStep() {
@@ -225,18 +246,18 @@ public class StepThreeCardAgent : CardBaseAgent
                 _countdownText.text = _countDownNum + "";
                 _countdownText.transform.DOScale(2, 0.5f).OnComplete(() => {
 
-                if (_countDownNum == 0)
-                {
-                    _countdownText.text = "";
-                    _shootFlowStatus = ShootFlowStatus.CountDownCompleted;
-                    _countDownNum = 3;
-                }
-                else
-                {
-                    DoCountDown();
-                }
+                    if (_countDownNum == 0)
+                    {
+                        _countdownText.text = "";
+                        _shootFlowStatus = ShootFlowStatus.CountDownCompleted;
+                        _countDownNum = 3;
+                    }
+                    else
+                    {
+                        DoCountDown();
+                    }
+                });
             });
-        });
     }
 
 
@@ -249,21 +270,22 @@ public class StepThreeCardAgent : CardBaseAgent
     {
         if (!_doShootLock) {
             _doShootLock = true;
-            StartCoroutine(DoShoot());
+            DoShoot();
         }
-        
     }
 
 
-    IEnumerator DoShoot() {
+    void DoShoot() {
 
-        Debug.Log("模拟拍摄");
-        //TakePhoto();
-        yield return new WaitForSeconds(3);
-        _totalPicture++;
-        Debug.Log("已拍" + _totalPicture + "张照片");
+        _messageBoxAgent.UpdateMessageTemp("拍摄中!");
 
-        _shootFlowStatus = ShootFlowStatus.ShootCompleted;
+        _cameraManager.Shoot(OnShootSuccess, OnShootError);
+
+        //yield return new WaitForSeconds(3);
+        //_totalPicture++;
+        //Debug.Log("已拍" + _totalPicture + "张照片");
+
+        //_shootFlowStatus = ShootFlowStatus.ShootCompleted;
     }
 
     /// <summary>
@@ -275,15 +297,21 @@ public class StepThreeCardAgent : CardBaseAgent
         {
             _doHandleLock = true;
             _showPreview = false;
+
+            _messageBoxAgent.UpdateMessageTemp("正在处理照片!");
+
             StartCoroutine(DoHandlePhoto());
         }
     }
 
     IEnumerator DoHandlePhoto()
     {
-        Debug.Log("模拟处理照片");
-        yield return new WaitForSeconds(1);
-        Debug.Log("已处理");
+        // 显示照片
+        _previewPhoto.gameObject.SetActive(true);
+        _previewPhoto.texture = _currentPhotoTexture;
+
+        yield return new WaitForSeconds(2);
+        _messageBoxAgent.UpdateMessageTemp("已处理照片!");
 
         // 红点功能
         _dots[_totalPicture - 1].color = Color.red;
@@ -304,34 +332,84 @@ public class StepThreeCardAgent : CardBaseAgent
     /// 显示预览
     /// </summary>
     private void ShowPreview() {
-        //Debug.Log("模拟预览功能");
-        Debug.Log("实时取景中...");
         if (_showPreview)
         {
             ShowImage();
+        }
+        else {
+            NotShowImage();
         }
     }
 
     private void ShowImage()
     {
+        _cameraManager.ShowLive();
+    }
 
-
+    private void NotShowImage()
+    {
+        _cameraManager.CloseLive();
     }
 
 
 
     void OnEnable()
     {
-        if (socketioManager != null)
-        {
-            socketioManager.Open();
-        }
 
         if (_cameraIsPrepared)
         {
             //StartLiveShow();
         }
     }
+
+    #region 连接实时取景回调
+    private void OnConnectLiveShowSuccess() {
+        _preparePrevRect.gameObject.SetActive(false);
+        _previewRawImage.gameObject.SetActive(true);
+
+        _connectLiveShowSuccess = true;
+        _cameraIsPrepared = true;
+    }
+
+    private void OnConnectLiveShowFailed()
+    {
+        _connectLiveShowSuccess = false;
+        _cameraIsPrepared = false;
+        Debug.Log("Connect LiveShow Failed");
+
+        _messageBoxAgent.UpdateMessage("连接实时取景失败！");
+
+    }
+    #endregion
+
+    #region 拍摄回调
+    private void OnShootSuccess(byte[] content,Texture2D tex) {
+        Debug.Log("拍摄回调 ");
+
+        _doShootLock = false;
+
+        // 保持内容
+        _videoFactoryAgent.AddPhotoTexture(tex);
+        _currentPhotoTexture = tex;
+
+        // 调整计数器
+        _totalPicture++;
+
+        _messageBoxAgent.UpdateMessageTemp("拍摄照片成功!");
+
+
+        _shootFlowStatus = ShootFlowStatus.ShootCompleted;
+    }
+
+
+    private void OnShootError(string message)
+    {
+        _doShootLock = false;
+
+        Debug.Log("拍摄失败 ： " + message);
+        _shootFlowStatus = ShootFlowStatus.ShootCompleted;
+    }
+    #endregion
 
 
 

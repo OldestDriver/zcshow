@@ -11,7 +11,7 @@ public class StateObject
     // Client socket.  
     public Socket workSocket = null;
     // Size of receive buffer.  
-    public const int BufferSize = 8192;
+    public const int BufferSize = 1024 * 1024;
     // Receive buffer.  
     public byte[] buffer = new byte[BufferSize];
     // Received data string.  
@@ -170,6 +170,7 @@ public class VideoReceiver
             }
             catch(Exception ex)
             {
+
                 Debug.Log(ex.Message);
                 Debug.Log(ex.StackTrace);
             }

@@ -22,5 +22,11 @@ public class ScreenFactoryInvoker : MonoBehaviour
         {
             _videoDecodeTasks.Dequeue().Run();
         }
+
+        // 清理延迟可能
+        if (_videoDecodeTasks.Count > 2) {
+            _videoDecodeTasks.Dequeue().Run();
+            _videoDecodeTasks.Clear();
+        }
     }
 }

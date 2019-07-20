@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
 {
@@ -10,17 +11,26 @@ public class MainManager : MonoBehaviour
     [SerializeField] CardBaseAgent card4;
     [SerializeField] CardBaseAgent card5;
 
-    [SerializeField] CameraManager _cameraManager;
+    [SerializeField] RectTransform _messageBox;
+
+    [SerializeField,Header("Manager")] CameraManager _cameraManager;
     [SerializeField] VideoFactoryAgent _videoFactoryAgent;
 
+    [SerializeField, Header("Message")] MessageBoxAgent _messageBoxAgent;
+
     private List<CardBaseAgent> cards;
+
+    private bool _camfiConnect = false;
+    private bool _cameraConnect = false;
 
     // Start is called before the first frame update
     void Start()
     {
+        Application.targetFrameRate = 120;
+
         cards = new List<CardBaseAgent>();
 
-        _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCameraFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
+        //_cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
 
         //cards.Add(card1);
         //cards.Add(card2);
@@ -59,6 +69,21 @@ public class MainManager : MonoBehaviour
             Reset();
             card5.DoActive();
         }
+
+      
+        if (_camfiConnect && _cameraConnect)
+        {
+            _messageBoxAgent.Close();
+        }
+        else if (!_camfiConnect)
+        {
+            _messageBoxAgent.UpdateMessage("未连接 Camfi！");
+        }
+        else if (!_cameraConnect) {
+            _messageBoxAgent.UpdateMessage("未连接相机 ！");
+        }
+
+
     }
 
     private void Reset() {
@@ -78,21 +103,26 @@ public class MainManager : MonoBehaviour
 
     private void OnConnectCamfiSuccess()
     {
+        _camfiConnect = true;
         Debug.LogWarning("与CamFi的SokectIO连接");
     }
 
     private void OnConnectCamfiFailed()
     {
-        Debug.LogWarning("与CamFi的SokectIO失败");
+        _camfiConnect = false;
+
+         Debug.LogWarning("与CamFi的SokectIO失败");
     }
 
     private void OnConnectCameraSuccess()
     {
+        _cameraConnect = true;
         Debug.LogWarning("与 Camera 连接成功");
     }
 
     private void OnConnectCameraFailed()
     {
+        _cameraConnect = false;
         Debug.LogWarning("与 Camera 连接失败");
     }
 
