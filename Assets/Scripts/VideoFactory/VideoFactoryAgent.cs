@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.Video;
 
 using NatCorderU.Core;
-
+using NatCorderU.Examples;
 
 public class VideoFactoryAgent : MonoBehaviour
 {
@@ -21,6 +21,7 @@ public class VideoFactoryAgent : MonoBehaviour
     [SerializeField] VideoPlayer _videoPlayer3;
 
     [SerializeField, Header("Audio")] AudioSource _audioSource;
+    [SerializeField, Header("Audio")] AudioListener _audioListener;
 
     [SerializeField, Header("Camera")] Camera _camera;
     [SerializeField] Animator _animator;
@@ -38,6 +39,10 @@ public class VideoFactoryAgent : MonoBehaviour
 
     [SerializeField] bool _record;
     [SerializeField, Header("Mock")] bool _isMock;
+
+    //[SerializeField] ReplayCam _replayCam;
+
+    private float _delayTime = 1f;
 
     private bool _video1Prepared = false;
     private bool _video2Prepared = false;
@@ -135,8 +140,6 @@ public class VideoFactoryAgent : MonoBehaviour
     }
 
     public void OnAnimationEnd() {
-        _audioSource.Stop();
-
         _videoFactoryStatus = VideoFactoryStatus.Finish;
     }
 
@@ -394,34 +397,37 @@ public class VideoFactoryAgent : MonoBehaviour
     ///     开始录屏
     /// </summary>
     private void StartRecord() {
+
+        _audioSource.Play();
+
+        //const float DownscaleFactor = 3 / 3;
+        //int w = (int)(Screen.width * DownscaleFactor);
+        //int h = (int)(Screen.height * DownscaleFactor);
+        //var configuration = new Configuration(w, h, 60);
+        //Replay.StartRecording(_camera, configuration, OnReplay);
+
+        StartCoroutine(StartRecodingE());
+
+    }
+
+
+    IEnumerator StartRecodingE() {
+        yield return new WaitForSeconds(0.2f);
+
+        //_replayCam.StartRecording();
+
+
         // Create a recording configuration
-        const float DownscaleFactor = 2f / 3;
+        const float DownscaleFactor = 3 / 3;
 
         int w = (int)(Screen.width * DownscaleFactor);
         int h = (int)(Screen.height * DownscaleFactor);
 
-        Debug.Log("W : " + w + " | H : " + h);
-
-        var configuration = new Configuration(w, h, 60);
-        
-
-        _audioSource.Play();
-
-        // Start recording with microphone audio
-        //if (recordMicrophoneAudio)
-        //{
-        //    // Start the microphone
-        //    audioSource.clip = Extensions.Microphone.StartRecording();
-        //    audioSource.loop = true;
-        //    audioSource.Play();
-        //    // Start recording with microphone audio
-        //    Replay.StartRecording(Camera.main, configuration, OnReplay, audioSource, true);
-        //}
-        // Start recording without microphone audio
-        Replay.StartRecording(_camera, configuration, OnReplay, _audioSource,true);
-
-
+        var configuration = new Configuration(w, h,60);
+        //Replay.StartRecording(_camera, configuration, OnReplay);
+        Replay.StartRecording(_camera, configuration, OnReplay, _audioSource);
     }
+
 
     /// <summary>
     ///     停止录屏
@@ -435,7 +441,13 @@ public class VideoFactoryAgent : MonoBehaviour
         //    Extensions.Microphone.StopRecording();
         //}
         // Stop recording
+
+        _audioSource.Stop();
+
         Replay.StopRecording();
+
+        //_replayCam.StopRecording();
+
 
     }
 
