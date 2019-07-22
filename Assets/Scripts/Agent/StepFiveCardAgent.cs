@@ -29,7 +29,6 @@ public class StepFiveCardAgent : CardBaseAgent
 
 
 
-
     private bool _erCodeIsGenerated = false;
     private bool _showResultLock = false;
     private bool _sendingEmail = false;
@@ -50,7 +49,7 @@ public class StepFiveCardAgent : CardBaseAgent
         _sendingEmail = false;
 
         _resultRect.gameObject.SetActive(false);
-        _loadingRect.gameObject.SetActive(true);
+        //_loadingRect.gameObject.SetActive(true);
         
     }
 
@@ -66,7 +65,7 @@ public class StepFiveCardAgent : CardBaseAgent
         //_erCodeIsGenerated = true;
         CompletePrepare();
 
-        _customKeyboard.OnClickEnter();
+        //_customKeyboard.OnClickEnter();
     }
 
     public override void DoRunIn()
@@ -84,7 +83,7 @@ public class StepFiveCardAgent : CardBaseAgent
         if (!_erCodeIsGenerated)
         {
             // 中间视频预览加载中
-            DoLoading();
+            //DoLoading();
         }
         else {
             if (!_showResultLock)
@@ -125,8 +124,6 @@ public class StepFiveCardAgent : CardBaseAgent
     /// 加载动画
     /// </summary>
     private void DoLoading() {
-
-        Debug.Log("DoLoading in five");
 
         float fillAmount = _loadingContentRect.GetComponent<Image>().fillAmount;
         fillAmount = fillAmount + 0.01f;

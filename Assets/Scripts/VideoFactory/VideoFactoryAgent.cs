@@ -46,6 +46,9 @@ public class VideoFactoryAgent : MonoBehaviour
 
     private float _delayTime = 1f;
 
+    private bool _isLoop = false; //  是否循环
+    private bool _isRecorded = false; // 是否已录制
+
     private bool _video1Prepared = false;
     private bool _video2Prepared = false;
     private bool _video3Prepared = false;
@@ -86,15 +89,31 @@ public class VideoFactoryAgent : MonoBehaviour
 
     private void Reset()
     {
-        doPreparedLock = false;
-        doRunLock = false;
-        doActiveLock = false;
-        doFinishLock = false;
-        _videoAddress = Application.persistentDataPath;
+        ResetLock();
+        //_videoAddress = Application.persistentDataPath;
 
         _photoTexs = new List<Texture2D>();
         _videoFactoryStatus = VideoFactoryStatus.Disabled;
         _contentStatus = VideoFactoryContentStatus.Prepared;
+    }
+
+    private void ResetLock() {
+        doPreparedLock = false;
+        doRunLock = false;
+        doActiveLock = false;
+        doFinishLock = false;
+    }
+
+    private void ResetForInit()
+    {
+        _isLoop = false; //  是否循环
+        _isRecorded = false; // 是否已录制
+        _video1Prepared = false;
+        _video2Prepared = false;
+        _video3Prepared = false;
+        _sourceVideoIsPrepared = false;  // 视频源标识符
+        _videoIsPrepared = false;  // 视频加载情况标识符
+
     }
 
 
@@ -102,13 +121,14 @@ public class VideoFactoryAgent : MonoBehaviour
     #region Event In Animation
 
     public void PlaySecnarioOne() {
+        //_videoPlayer1.frame = 0;
         _videoPlayer1.Play();
         Debug.Log("Play Secnario One");
     }
 
     public void StopSecnarioOne()
     {
-        _videoPlayer1.Stop();
+        _videoPlayer1.Pause();
 
         Debug.Log("Stop Secnario One");
     }
@@ -123,7 +143,7 @@ public class VideoFactoryAgent : MonoBehaviour
 
     public void StopSecnarioTwo()
     {
-        _videoPlayer2.Stop();
+        _videoPlayer2.Pause();
         Debug.Log("Stop Secnario Two");
     }
 
@@ -137,11 +157,12 @@ public class VideoFactoryAgent : MonoBehaviour
 
     public void StopSecnarioFive()
     {
-        _videoPlayer3.Stop();
+        _videoPlayer3.Pause();
         Debug.Log("Stop Secnario Five");
     }
 
     public void OnAnimationEnd() {
+        _audioSource.Stop();
         _videoFactoryStatus = VideoFactoryStatus.Finish;
     }
 
@@ -155,6 +176,20 @@ public class VideoFactoryAgent : MonoBehaviour
     /// </summary>
     public void DoActive(Action<string> completeCallBack) {
         //Reset();
+
+        ResetForInit();
+
+        _videoGenerateCompletedCallback = completeCallBack;
+
+        _videoFactoryStatus = VideoFactoryStatus.Prepare;
+    }
+
+    public void DoActive(Action<string> completeCallBack,bool isLoop)
+    {
+        //Reset();
+        ResetForInit();
+
+        _isLoop = isLoop;
 
         _videoGenerateCompletedCallback = completeCallBack;
 
@@ -196,6 +231,7 @@ public class VideoFactoryAgent : MonoBehaviour
 
         if (_videoFactoryStatus == VideoFactoryStatus.Prepare)
         {
+
             if (!doPreparedLock) {
                 doPreparedLock = true;
 
@@ -260,6 +296,8 @@ public class VideoFactoryAgent : MonoBehaviour
             if (!doActiveLock) {
                 doActiveLock = true;
 
+                CheckVideoStatus();
+
                 _videoFactoryStatus = VideoFactoryStatus.Running;
             }
 
@@ -272,7 +310,7 @@ public class VideoFactoryAgent : MonoBehaviour
             {
                 doRunLock = true;
 
-                if (_record)
+                if (_record && !_isRecorded)
                 {
                     Debug.Log("开始录屏");
 
@@ -281,7 +319,11 @@ public class VideoFactoryAgent : MonoBehaviour
                 }
 
                 //  开始动画
+                _animator.Update(0f);
                 _animator.Play("Play");
+
+                _audioSource.Play();
+
 
             }
         }
@@ -292,20 +334,26 @@ public class VideoFactoryAgent : MonoBehaviour
             {
                 doFinishLock = true;
 
-                if (_record)
+                if (_record && !_isRecorded)
                 {
                     //  结束录屏
                     StopRecord();
 
-                    //  生成视频文件 _videoAddress
+                    _isRecorded = true;
+
+                    _videoGenerateCompletedCallback.Invoke(_videoAddress);
                 }
 
-                _videoGenerateCompletedCallback.Invoke(_videoAddress);
 
-
-                //  结束并重置
-                Reset();
-
+                if (_isLoop)
+                {
+                    ResetLock();
+                    _videoFactoryStatus = VideoFactoryStatus.Active;
+                }
+                else {
+                    //  结束并重置
+                    Reset();
+                }
             }
         }
 
@@ -330,8 +378,6 @@ public class VideoFactoryAgent : MonoBehaviour
 
     private void LoadVideo()
     {
-        Debug.Log("加载视频开始");
-
         StartCoroutine(PrepareVideo1());
         StartCoroutine(PrepareVideo2());
         StartCoroutine(PrepareVideo3());
@@ -391,6 +437,9 @@ public class VideoFactoryAgent : MonoBehaviour
         else {
             _sourceVideoIsPrepared = false;
         }
+
+        Debug.Log("_sourceVideoIsPrepared : " + _sourceVideoIsPrepared);
+
     }
 
 
@@ -400,7 +449,6 @@ public class VideoFactoryAgent : MonoBehaviour
     /// </summary>
     private void StartRecord() {
 
-        _audioSource.Play();
         StartCoroutine(StartRecodingE());
 
     }
@@ -437,10 +485,7 @@ public class VideoFactoryAgent : MonoBehaviour
         //}
         // Stop recording
 
-        _audioSource.Stop();
-
         Replay.StopRecording();
-
         //_replayCam.StopRecording();
 
 
@@ -480,4 +525,32 @@ public class VideoFactoryAgent : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// 停止播放
+    /// </summary>
+    public void StopPlayVideoAndClear() {
+
+        // 如果正在录制中
+        if (!_isRecorded) {
+            _animator.StopRecording();
+            Replay.StopRecording();
+        }
+
+        Reset();
+    }
+
+    public void StopPlayVideo()
+    {
+
+        // 如果正在录制中
+        if (!_isRecorded)
+        {
+            _animator.StopRecording();
+            _audioSource.Stop();
+            Replay.StopRecording();
+        }
+
+        _isLoop = false;
+
+    }
 }

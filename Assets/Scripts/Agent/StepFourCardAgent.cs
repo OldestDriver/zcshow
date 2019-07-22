@@ -18,23 +18,27 @@ public class StepFourCardAgent : CardBaseAgent
     [SerializeField, Header("btn - RePhoto")] private CardBaseAgent _rephotoCardAgent;
     [SerializeField, Header("btn - Confirm")] private CardBaseAgent _confirmCardAgent;
 
+    [SerializeField] private Color _btn_disable_Color;
+    [SerializeField] private Color _btn_active_Color;
+
+
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
+    [SerializeField] private Texture _recordTexture;
+
+
 
 
     private bool _videoIsGenerateCompleted = false;
     private bool _showResultLock = false;
+    private bool _doRunWhenStartLock = false;
 
     private void Reset()
     {
         _showResultLock = false;
+        _doRunWhenStartLock = false;
         _videoIsGenerateCompleted = false;
 
         // 预处理UI
-        _retakeRect.gameObject.SetActive(false);
-        _confirmRect.gameObject.SetActive(false);
-
-        _loadingRect.GetComponent<CanvasGroup>().alpha = 1f;
-
 
     }
 
@@ -43,6 +47,15 @@ public class StepFourCardAgent : CardBaseAgent
     /// </summary>
     public override void DoPrepare() {
         Reset();
+
+        Text[] texts = _confirmRect.GetComponentsInChildren<Text>();
+        foreach (Text t in texts)
+        {
+            t.color = _btn_disable_Color;
+            Debug.Log("T : " + t.text);
+
+        }
+        _confirmRect.GetComponent<Button>().interactable = false;
 
         // 此处处理视频拼接
         DoGenerateVideo();
@@ -64,10 +77,13 @@ public class StepFourCardAgent : CardBaseAgent
     public override void DoRun() {
         if (!_videoIsGenerateCompleted)
         {
+
             // 中间视频预览加载中
-            DoLoading();
+            //DoLoading();
         }
         else {
+            DoRunWhenStart();
+
             if (!_showResultLock) {
                 _showResultLock = true;
                 ShowResult();
@@ -96,6 +112,9 @@ public class StepFourCardAgent : CardBaseAgent
     // 点击确认
     public void OnClickConfirm() {
         nextCard = _confirmCardAgent;
+
+        _videoFactoryAgent.StopPlayVideo();
+
         DoRunOut();
     }
 
@@ -104,38 +123,31 @@ public class StepFourCardAgent : CardBaseAgent
     public void OnClickRePhoto()
     {
         nextCard = _rephotoCardAgent;
+
+        _videoFactoryAgent.StopPlayVideoAndClear();
+
         DoRunOut();
     }
 
 
-    /// <summary>
-    /// 加载动画
-    /// </summary>
-    private void DoLoading() {
+    private void DoRunWhenStart() {
+        if (!_doRunWhenStartLock) {
+            _doRunWhenStartLock = true;
 
-        float fillAmount = _loadingContentRect.GetComponent<Image>().fillAmount;
-        fillAmount = fillAmount + 0.01f;
-        if (fillAmount > 1f) {
-            fillAmount = 0;
+            Text[] texts = _confirmRect.GetComponentsInChildren<Text>();
+            foreach (Text t in texts)
+            {
+                t.DOColor(_btn_active_Color, 0.5f);
+            }
+
+            _confirmRect.GetComponent<Button>().interactable = true;
         }
-        _loadingContentRect.GetComponent<Image>().fillAmount = fillAmount;
-
     }
 
 
+
     private void ShowResult() {
-        // 关闭加载动画
-        _loadingRect.GetComponent<CanvasGroup>()
-            .DOFade(0, 0.5f)
-            .OnComplete(() => {
-                // 显示按钮
-                _retakeRect.gameObject.SetActive(true);
-                _confirmRect.gameObject.SetActive(true);
 
-                // 显示视频内容
-                LoadVideo();
-
-            });
     }
 
     /// <summary>
@@ -143,7 +155,7 @@ public class StepFourCardAgent : CardBaseAgent
     /// </summary>
     private void DoGenerateVideo() {
 
-        _videoFactoryAgent.DoActive(OnVideoGenerate);
+        _videoFactoryAgent.DoActive(OnVideoGenerate,true);
 
     }
 
@@ -151,32 +163,13 @@ public class StepFourCardAgent : CardBaseAgent
     {
         Debug.Log("Video 生成完成 ： " + videoUrl);
 
-        _previewVideoPlayer.url = videoUrl;
+        //_previewVideoPlayer.url = videoUrl;
 
 
         _videoIsGenerateCompleted = true;
     }
 
 
-    private void LoadVideo()
-    {
-        StartCoroutine(PrepareVideo());
-    }
-
-    //step1
-    //播放视频
-    IEnumerator PrepareVideo()
-    {
-        _previewVideoPlayer.Prepare();
-        while (!_previewVideoPlayer.isPrepared)
-        {
-            yield return new WaitForSeconds(1);
-            break;
-        }
-        _previewVideoPlayerHolder.texture = _previewVideoPlayer.texture;
-        _previewVideoPlayer.Play();
-
-    }
 
 
 }

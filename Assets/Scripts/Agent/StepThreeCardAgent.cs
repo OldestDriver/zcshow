@@ -18,11 +18,12 @@ public class StepThreeCardAgent : CardBaseAgent
     //第三步
     [SerializeField, Header("UI")] private Text _countdownText;
     [SerializeField] private Text _titleText;//标题
-    [SerializeField] private RawImage _previewRawImage;//照片
+
+    [SerializeField, Header("Preview")] private RawImage _previewRawImage;//照片
     [SerializeField] private RawImage _previewPhoto;// 预览照片
     [SerializeField] private RectTransform _preparePrevRect;    // 准备预览画面
 
-    [SerializeField , Header("Dots")] private Color _color_dot_active;
+    [SerializeField, Header("Dots")] private Color _color_dot_active;
     [SerializeField] private Color _color_dot;
     [SerializeField] private List<RawImage> _dots;//红点
 
@@ -30,7 +31,11 @@ public class StepThreeCardAgent : CardBaseAgent
     [SerializeField, Header("Camera Manager")] CameraManager _cameraManager;
     [SerializeField, Header("Video Factory Agent")] VideoFactoryAgent _videoFactoryAgent;
 
-    private int _countDownNum = 3;//倒计时数字
+
+    [SerializeField,Header("倒计时时间")] int _CountDownNumCost = 3;//倒计时数字常量
+
+    private int _countDownNum;//倒计时数字
+    
     private int _totalPicture = 0;//图片总数
     private bool _beginFlowComplete = false;
     private ShootFlowStatus _shootFlowStatus = ShootFlowStatus.Init;
@@ -55,14 +60,26 @@ public class StepThreeCardAgent : CardBaseAgent
     private bool flag;
 
     private void Reset() {
-        _countDownNum = 3;
+        _countDownNum = _CountDownNumCost;
         _totalPicture = 0;
         _beginFlowComplete = false;
         _shootFlowStatus = ShootFlowStatus.Init;
         _showPreview = false;
         ResetLock();
 
+        ResetCounts();
+
     }
+
+    /// <summary>
+    ///  重置计数器
+    /// </summary>
+    void ResetCounts(){
+        for (int i = 0; i < _dots.Count; i++) {
+            _dots[i].color = _color_dot;
+        }
+    }
+
 
     private void ResetLock() {
         _doCountDownLock = false;
@@ -232,6 +249,8 @@ public class StepThreeCardAgent : CardBaseAgent
         {
             _doCountDownLock = true;
             _showPreview = true;
+
+            _countDownNum = _CountDownNumCost;
             DoCountDown();
         }
     }
@@ -240,25 +259,46 @@ public class StepThreeCardAgent : CardBaseAgent
         // 设置文字
         _titleText.text = "准备拍摄第" + (_totalPicture + 1) + "张照片";
 
-        _countdownText.transform.DOScale(0, 0.5f)
-            .OnComplete(() => {
-                _countDownNum--;
-                _countdownText.text = _countDownNum + "";
-                _countdownText.transform.DOScale(2, 0.5f).OnComplete(() => {
+        //_countdownText.transform.DOScale(0, 0.5f)
+        //    .OnComplete(() => {
+        //        _countDownNum--;
+        //        _countdownText.text = _countDownNum + "";
+        //        _countdownText.transform.DOScale(2, 0.5f).OnComplete(() => {
 
-                    if (_countDownNum == 0)
-                    {
-                        _countdownText.text = "";
-                        _shootFlowStatus = ShootFlowStatus.CountDownCompleted;
-                        _countDownNum = 3;
-                    }
-                    else
-                    {
-                        DoCountDown();
-                    }
-                });
-            });
+        //            if (_countDownNum == 0)
+        //            {
+        //                _countdownText.text = "";
+        //                _shootFlowStatus = ShootFlowStatus.CountDownCompleted;
+        //                _countDownNum = _CountDownNumCost;
+        //            }
+        //            else
+        //            {
+        //                DoCountDown();
+        //            }
+        //        });
+        //    });
+
+
+        Debug.Log("DoCountDown");
+
+        if (_countDownNum > 0)
+        {
+            _countdownText.text = _countDownNum.ToString();
+            StartCoroutine(WaitForOneSecond());
+        }
+        else {
+            _shootFlowStatus = ShootFlowStatus.CountDownCompleted;
+            _countDownNum = _CountDownNumCost;
+            _countdownText.text = "";
+        }
     }
+
+    IEnumerator WaitForOneSecond() {
+        yield return new WaitForSeconds(1);
+        _countDownNum--;
+        DoCountDown();
+    }
+
 
 
 
@@ -281,6 +321,9 @@ public class StepThreeCardAgent : CardBaseAgent
 
         _cameraManager.Shoot(OnShootSuccess, OnShootError);
 
+        // 关闭实时预览
+        _showPreview = false;
+
         //yield return new WaitForSeconds(3);
         //_totalPicture++;
         //Debug.Log("已拍" + _totalPicture + "张照片");
@@ -298,9 +341,11 @@ public class StepThreeCardAgent : CardBaseAgent
             _doHandleLock = true;
             _showPreview = false;
 
-            _messageBoxAgent.UpdateMessageTemp("正在处理照片!");
+            //_messageBoxAgent.UpdateMessageTemp("正在处理照片!");
 
             StartCoroutine(DoHandlePhoto());
+
+            //DoHandlePhoto();
         }
     }
 
@@ -311,14 +356,15 @@ public class StepThreeCardAgent : CardBaseAgent
         _previewPhoto.texture = _currentPhotoTexture;
 
         yield return new WaitForSeconds(2);
-        _messageBoxAgent.UpdateMessageTemp("已处理照片!");
+        //_messageBoxAgent.UpdateMessageTemp("已处理照片!");
+
+        _messageBoxAgent.UpdateMessageTemp("拍摄照片成功!");
 
         // 红点功能
         _dots[_totalPicture - 1].color = Color.red;
 
-
-        _countDownNum = 3;
-        _countdownText.text = _countDownNum + "";
+        //_countDownNum = 3;
+        //_countdownText.text = _countDownNum + "";
 
         ResetLock();
 
@@ -395,7 +441,6 @@ public class StepThreeCardAgent : CardBaseAgent
         // 调整计数器
         _totalPicture++;
 
-        _messageBoxAgent.UpdateMessageTemp("拍摄照片成功!");
 
 
         _shootFlowStatus = ShootFlowStatus.ShootCompleted;
