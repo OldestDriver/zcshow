@@ -15,8 +15,10 @@ public class StepFourCardAgent : CardBaseAgent
     [SerializeField] private RectTransform _loadingContentRect;
     [SerializeField] private RectTransform _loadingRect;
 
-    [SerializeField, Header("RePhoto")] private CardBaseAgent _rephotoCardAgent;
-    [SerializeField, Header("Confirm")] private CardBaseAgent _confirmCardAgent;
+    [SerializeField, Header("btn - RePhoto")] private CardBaseAgent _rephotoCardAgent;
+    [SerializeField, Header("btn - Confirm")] private CardBaseAgent _confirmCardAgent;
+
+    [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
 
 
     private bool _videoIsGenerateCompleted = false;
@@ -144,15 +146,15 @@ public class StepFourCardAgent : CardBaseAgent
     /// </summary>
     private void DoGenerateVideo() {
 
-        StartCoroutine(DoMockGenerate());
+        _videoFactoryAgent.DoActive(OnVideoGenerate);
+
     }
 
-
-    IEnumerator DoMockGenerate()
+    void OnVideoGenerate(string videoUrl)
     {
+        Debug.Log("Video 生成完成 ： " + videoUrl);
 
-        Debug.Log("模拟拼接过程");
-        yield return new WaitForSeconds(5);
+
         _videoIsGenerateCompleted = true;
     }
 

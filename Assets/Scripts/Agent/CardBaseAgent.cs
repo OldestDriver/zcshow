@@ -10,6 +10,8 @@ public class CardBaseAgent : MonoBehaviour
     /// 逻辑层面成功后的下个卡片
     /// </summary>
     [SerializeField] protected CardBaseAgent _NextCard;
+    [SerializeField, Header("Message")] protected MessageBoxAgent _messageBoxAgent;
+
     public CardBaseAgent nextCard { set { _NextCard = value; } }
 
     CardStatus _cardStatus = CardStatus.InActive;

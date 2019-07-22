@@ -1,5 +1,6 @@
 ﻿using BestHTTP;
 using BestHTTP.SocketIO;
+using LitJson;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,9 +35,21 @@ public class CameraManager : MonoBehaviour
 
     private bool _currentFrameLock = false;
     private bool _showLive = false;
+    private bool _hasReceiveFrame = false;
+    private bool _hasReceiveFrameLock = false;
 
 
     #region 【公开】 初始化相机状态
+
+
+    private void Reset() {
+        _currentFrameLock = false;
+        _showLive = false;
+        _hasReceiveFrame = false;
+        _hasReceiveFrameLock = false;
+
+    }
+
 
     /// <summary>
     ///     初始化相机状态
@@ -50,6 +63,8 @@ public class CameraManager : MonoBehaviour
 
         socketioManager = new SocketManager(new Uri(CamfiServerInfo.SockIOUrlStr));
         InitSocketIOManager();
+
+        GetCameraConfig();
 
         try
         {
@@ -72,7 +87,9 @@ public class CameraManager : MonoBehaviour
     /// </summary>
     /// <param name="onConnectLiveShowSuccess"></param>
     /// <param name="onConnectLiveShowFailed"></param>
-    public void InitLiveShow(Action onConnectLiveShowSuccess, Action onConnectLiveShowFailed) {
+    /// <param name="screen"></param>
+    public void InitLiveShow(Action onConnectLiveShowSuccess, Action onConnectLiveShowFailed, RawImage screen) {
+        SetLiveScreen(screen);
         _onConnectLiveShowAction = onConnectLiveShowSuccess;
         _onBreakLiveShowAction = onConnectLiveShowFailed;
         InitLiveView();
@@ -117,6 +134,21 @@ public class CameraManager : MonoBehaviour
     }
 
     #endregion
+
+
+    void Update() {
+        // 判断是否已经实时取景
+        if (_hasReceiveFrame) {
+            if (!_hasReceiveFrameLock) {
+                _hasReceiveFrameLock = true;
+                _onConnectLiveShowAction.Invoke();
+            }
+            
+        }
+
+
+
+    }
 
 
 
@@ -180,30 +212,59 @@ public class CameraManager : MonoBehaviour
     /// <param name="response"></param>
     void onCaptureMovie(HTTPRequest request, HTTPResponse response)
     {
+
         if (RequestIsSuccess(request, response))
         {
             if (response.StatusCode == 200)
             {
-                VideoReceiver videoReceiver = new VideoReceiver(onVideoFramePrepared);
-                videoReceiver.Receive();
+                if (_videoReceiver == null) {
+                    _videoReceiver = new VideoReceiver(onVideoFramePrepared);
+                }
+                _videoReceiver.Receive();
+
+                _connectLiveShowSuccess = true;
             }
             else
             {
                 // 实时取景失败
                 _connectLiveShowSuccess = false;
-                _onConnectLiveShowAction.Invoke();
             }
         }
         else
         {
+            Debug.Log("连接实时取景失败 : ");
             // 连接实时取景失败
             _connectLiveShowSuccess = false;
+        }
+
+
+        if (!_connectLiveShowSuccess)
+        {
             _onBreakLiveShowAction.Invoke();
         }
+        else {
+            //_onConnectLiveShowAction.Invoke();
+        }
+
+
+
+
     }
 
+    /// <summary>
+    ///     需注意，此回调在分线程中运行
+    /// </summary>
+    /// <param name="content"></param>
     void onVideoFramePrepared(byte[] content)
     {
+        // 当第一次收到实景信号后，返回成功信号
+        if (!_hasReceiveFrame)
+        {
+            _hasReceiveFrame = true;
+            //_onConnectLiveShowAction.Invoke();
+        }
+
+
         if (!_currentFrameLock)
         {
             _currentFrameLock = true;
@@ -211,7 +272,6 @@ public class CameraManager : MonoBehaviour
                 ScreenFactoryInvoker.AddCommand(new VideoDecodeTask(content, _liveScreen));
             }
             _currentFrameLock = false;
-
         }
     }
 
@@ -269,9 +329,9 @@ public class CameraManager : MonoBehaviour
     void OnFileAdded(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
     {
         string pathInCamfi = args[0].ToString();
-        Debug.Log("照片添加，其Url: " + pathInCamfi);
+        Debug.Log("拍照成功，其Url: " + pathInCamfi);
         HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.CamFiGetRawDataByEnCodeUrlStr(UrlEncode(pathInCamfi))), HTTPMethods.Get, GetRawDataFinished);
-        //request.Send();
+        request.Send();
 
     }
     void OnLiveshowError(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
@@ -305,6 +365,62 @@ public class CameraManager : MonoBehaviour
 
 
     #endregion
+
+
+    /// <summary>
+    ///     获取相机配置
+    /// </summary>
+    private void GetCameraConfig()
+    {
+        //_GetCameraConfigRequest = new HTTPRequest(new Uri(CamfiServerInfo.GetVersionUrlStr), HTTPMethods.Get,onGetCameraConfigSuccess);
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.GetConfigUrlStr), HTTPMethods.Get, onGetCameraConfigSuccess);
+        request.Send();
+    }
+
+
+    private void onGetCameraConfigSuccess(HTTPRequest request, HTTPResponse response)
+    {
+        if (RequestIsSuccess(request, response))
+        {
+            if (!response.IsSuccess)
+            {
+                _connectCameraSuccess = false;
+
+                // 当相机进入休眠状态后，会返回500错误
+
+                return;
+            }
+
+            string result = request.Response.DataAsText;
+            JsonData rData = JsonMapper.ToObject(result);
+            if (!rData.Keys.Contains("message"))
+            {
+
+                Debug.Log("相机连接正常");
+                _connectCameraSuccess = true;
+            }
+            else
+            {
+                Debug.Log("相机未连接");
+                _connectCameraSuccess = false;
+            }
+        }
+        else
+        {
+            _connectCameraSuccess = false;
+        }
+
+        if (_connectCameraSuccess)
+        {
+            _onConnectCameraAction.Invoke();
+        }
+        else {
+            _onBreakCameraAction.Invoke();
+        }
+
+    }
+
+
 
 
     void onRequestCallback(HTTPRequest request, HTTPResponse response)
@@ -362,4 +478,15 @@ public class CameraManager : MonoBehaviour
 
         return (sb.ToString());
     }
+
+
+
+    void OnDestroy() {
+        // 关闭与 camfi 的 socket连接
+        _videoReceiver?.Close();
+
+        socketioManager?.Close();
+    }
+
+
 }

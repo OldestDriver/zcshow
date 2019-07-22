@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.Video;
 
 using NatCorderU.Core;
-
+using NatCorderU.Examples;
 
 public class VideoFactoryAgent : MonoBehaviour
 {
@@ -20,15 +20,29 @@ public class VideoFactoryAgent : MonoBehaviour
     [SerializeField, Header("Video 3")] RawImage _image3;
     [SerializeField] VideoPlayer _videoPlayer3;
 
+    [SerializeField, Header("Audio")] AudioSource _audioSource;
+    [SerializeField, Header("Audio")] AudioListener _audioListener;
+
     [SerializeField, Header("Camera")] Camera _camera;
     [SerializeField] Animator _animator;
 
-    [SerializeField] Image[] content1s = new Image[2];  //
-    [SerializeField] Image[] content2s = new Image[2];
-    [SerializeField] Image[] content3s = new Image[2];
+
+    [SerializeField, Header("Photo")] Image _scenario2left;
+    [SerializeField] Image _scenario2middle;
+    [SerializeField] Image _scenario2right;
+    [SerializeField] Image _scenario3B;
+    [SerializeField] Image _scenario3A;
+    [SerializeField] Image _scenario3C;
+    [SerializeField] Image _scenario4B;
+    [SerializeField] Image _scenario4C;
 
 
     [SerializeField] bool _record;
+    [SerializeField, Header("Mock")] bool _isMock;
+
+    //[SerializeField] ReplayCam _replayCam;
+
+    private float _delayTime = 1f;
 
     private bool _video1Prepared = false;
     private bool _video2Prepared = false;
@@ -39,8 +53,10 @@ public class VideoFactoryAgent : MonoBehaviour
     private bool _videoIsPrepared = false;  // 视频加载情况标识符
 
     private List<string> _photos = new List<string>();   // 照片集合
+    private List<Texture2D> _photoTexs = new List<Texture2D>();
 
     private VideoFactoryStatus _videoFactoryStatus = VideoFactoryStatus.Disabled;
+    private VideoFactoryContentStatus _contentStatus = VideoFactoryContentStatus.Prepared;
 
     private Action<string> _videoGenerateCompletedCallback;
     private string _videoAddress;
@@ -54,6 +70,11 @@ public class VideoFactoryAgent : MonoBehaviour
         Finish
     }
 
+    enum VideoFactoryContentStatus {
+        Prepared,
+        Finish
+    }
+
     private bool doPreparedLock = false;
     private bool doRunLock = false;
     private bool doActiveLock = false;
@@ -61,9 +82,25 @@ public class VideoFactoryAgent : MonoBehaviour
 
 
 
+    private void Reset()
+    {
+        doPreparedLock = false;
+        doRunLock = false;
+        doActiveLock = false;
+        doFinishLock = false;
+        _videoAddress = "";
+
+        _photoTexs = new List<Texture2D>();
+        _videoFactoryStatus = VideoFactoryStatus.Disabled;
+        _contentStatus = VideoFactoryContentStatus.Prepared;
+    }
+
+
+
+    #region Event In Animation
+
     public void PlaySecnarioOne() {
         _videoPlayer1.Play();
-
         Debug.Log("Play Secnario One");
     }
 
@@ -79,13 +116,13 @@ public class VideoFactoryAgent : MonoBehaviour
         _image2.texture = _videoPlayer2.texture;
 
         _videoPlayer2.Play();
-        Debug.Log("Play Secnario One");
+        Debug.Log("Play Secnario Two");
     }
 
     public void StopSecnarioTwo()
     {
         _videoPlayer2.Stop();
-        Debug.Log("Stop Secnario One");
+        Debug.Log("Stop Secnario Two");
     }
 
     public void PlaySecnarioFive()
@@ -93,32 +130,29 @@ public class VideoFactoryAgent : MonoBehaviour
         _image3.texture = _videoPlayer3.texture;
 
         _videoPlayer3.Play();
-        Debug.Log("Play Secnario One");
+        Debug.Log("Play Secnario Five");
     }
 
     public void StopSecnarioFive()
     {
         _videoPlayer3.Stop();
-        Debug.Log("Stop Secnario One");
+        Debug.Log("Stop Secnario Five");
     }
 
-
-    private void Reset() {
-        doPreparedLock = false;
-        doRunLock = false;
-        doActiveLock = false;
-        doFinishLock = false;
-        _videoAddress = "";
-
-        _videoFactoryStatus = VideoFactoryStatus.Disabled;
+    public void OnAnimationEnd() {
+        _videoFactoryStatus = VideoFactoryStatus.Finish;
     }
+
+    #endregion
+
+
 
 
     /// <summary>
     ///     激活视频工厂
     /// </summary>
     public void DoActive(Action<string> completeCallBack) {
-        Reset();
+        //Reset();
 
         _videoGenerateCompletedCallback = completeCallBack;
 
@@ -145,9 +179,9 @@ public class VideoFactoryAgent : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.M)) {
-            StopRecord();
-        }
+        //if (Input.GetKeyDown(KeyCode.M)) {
+        //    StopRecord();
+        //}
 
 
         if (Input.GetKeyDown(KeyCode.Space))
@@ -168,29 +202,37 @@ public class VideoFactoryAgent : MonoBehaviour
                     gameObject.SetActive(true);
                 }
 
-                Sprite sprite = null, sprite2 = null, sprite3 = null;
+                Sprite spriteA, spriteB, spriteC;
+                if (_isMock)
+                {
 
-                //// 获取三张照片 / 处理照片 
-                //for (int i = 0; i < _photos.Count; i++)
-                //{
-                //    string photoStr = _photos[i];
-                //}
+                    spriteA = Resources.Load<Sprite>("1");
 
-                //// 将图片赋值至控件
-                //for (int i = 0; i < content1s.Length; i++)
-                //{
-                //    content1s[i].sprite = sprite;
-                //}
+                    Debug.Log("spriteA width : " + spriteA.rect.width);
 
-                //for (int i = 0; i < content2s.Length; i++)
-                //{
-                //    content2s[i].sprite = sprite2;
-                //}
+                     spriteB = Resources.Load<Sprite>("2");
+                     spriteC = Resources.Load<Sprite>("3");
+                }
+                else {
+                     spriteA = Sprite.Create(_photoTexs[0], new Rect(0, 0, _photoTexs[0].width, _photoTexs[0].height), Vector2.zero);
+                     spriteB = Sprite.Create(_photoTexs[0], new Rect(0, 0, _photoTexs[0].width, _photoTexs[1].height), Vector2.zero);
+                     spriteC = Sprite.Create(_photoTexs[0], new Rect(0, 0, _photoTexs[0].width, _photoTexs[2].height), Vector2.zero);
+                }
 
-                //for (int i = 0; i < content3s.Length; i++)
-                //{
-                //    content3s[i].sprite = sprite3;
-                //}
+
+
+
+                _scenario2left.sprite = spriteA;
+                _scenario2middle.sprite = spriteA;
+                _scenario2right.sprite = spriteA;
+
+                _scenario3A.sprite = spriteA;
+                _scenario3B.sprite = spriteB;
+                _scenario3C.sprite = spriteC;
+
+                _scenario4B.sprite = spriteB;
+                _scenario4C.sprite = spriteC;
+
 
                 //  准备好视频
                 LoadVideo();
@@ -230,6 +272,8 @@ public class VideoFactoryAgent : MonoBehaviour
 
                 if (_record)
                 {
+                    Debug.Log("开始录屏");
+
                     //  开始录屏
                     StartRecord();
                 }
@@ -263,12 +307,22 @@ public class VideoFactoryAgent : MonoBehaviour
             }
         }
 
-        // 判断动画状态
-        AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
 
-        //Debug.Log("stateInfo.fullPathHash : " + stateInfo.fullPathHash);
-        //Debug.Log("stateInfo.normalizedTime : " + stateInfo.normalizedTime);
+    }
 
+
+    /// <summary>
+    ///     添加 Photo Texture
+    /// </summary>
+    public void AddPhotoTexture(Texture2D photoTex) {
+        if (_contentStatus == VideoFactoryContentStatus.Finish)
+            return;
+
+        _photoTexs.Add(photoTex);
+
+        if (_photoTexs.Count == 3) {
+            _contentStatus = VideoFactoryContentStatus.Finish;
+        }
     }
 
 
@@ -344,32 +398,36 @@ public class VideoFactoryAgent : MonoBehaviour
     /// </summary>
     private void StartRecord() {
 
+        _audioSource.Play();
+
+        //const float DownscaleFactor = 3 / 3;
+        //int w = (int)(Screen.width * DownscaleFactor);
+        //int h = (int)(Screen.height * DownscaleFactor);
+        //var configuration = new Configuration(w, h, 60);
+        //Replay.StartRecording(_camera, configuration, OnReplay);
+
+        StartCoroutine(StartRecodingE());
+
+    }
+
+
+    IEnumerator StartRecodingE() {
+        yield return new WaitForSeconds(0.2f);
+
+        //_replayCam.StartRecording();
+
 
         // Create a recording configuration
-        const float DownscaleFactor = 2f / 3;
+        const float DownscaleFactor = 3 / 3;
 
         int w = (int)(Screen.width * DownscaleFactor);
         int h = (int)(Screen.height * DownscaleFactor);
 
-        Debug.Log("W : " + w + " | H : " + h);
-
-
-        var configuration = new Configuration(w, h);
-        // Start recording with microphone audio
-        //if (recordMicrophoneAudio)
-        //{
-        //    // Start the microphone
-        //    audioSource.clip = Extensions.Microphone.StartRecording();
-        //    audioSource.loop = true;
-        //    audioSource.Play();
-        //    // Start recording with microphone audio
-        //    Replay.StartRecording(Camera.main, configuration, OnReplay, audioSource, true);
-        //}
-        // Start recording without microphone audio
-        Replay.StartRecording(_camera, configuration, OnReplay);
-
-
+        var configuration = new Configuration(w, h,60);
+        //Replay.StartRecording(_camera, configuration, OnReplay);
+        Replay.StartRecording(_camera, configuration, OnReplay, _audioSource);
     }
+
 
     /// <summary>
     ///     停止录屏
@@ -383,7 +441,13 @@ public class VideoFactoryAgent : MonoBehaviour
         //    Extensions.Microphone.StopRecording();
         //}
         // Stop recording
+
+        _audioSource.Stop();
+
         Replay.StopRecording();
+
+        //_replayCam.StopRecording();
+
 
     }
 
@@ -394,11 +458,12 @@ public class VideoFactoryAgent : MonoBehaviour
 
     void OnReplay(string path)
     {
+
+        _videoGenerateCompletedCallback.Invoke(path);
+        Reset();
+
+
         Debug.Log("Saved recording to: " + path);
-#if UNITY_IOS || UNITY_ANDROID
-            // Playback the video
-            Handheld.PlayFullScreenMovie(path);
-#endif
     }
 
 }

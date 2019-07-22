@@ -13,6 +13,7 @@ public static class StreamVideoPlayer {
         //    初始化计时器
         System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
+
         if (texture2D == null) {
             texture2D = new Texture2D(200, 200);
         }
