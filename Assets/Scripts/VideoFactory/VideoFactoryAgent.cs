@@ -36,6 +36,8 @@ public class VideoFactoryAgent : MonoBehaviour
     [SerializeField] Image _scenario4B;
     [SerializeField] Image _scenario4C;
 
+    [SerializeField, Header("Message")] MessageBoxAgent _agent;
+
 
     [SerializeField] bool _record;
     [SerializeField, Header("Mock")] bool _isMock;
@@ -462,6 +464,8 @@ public class VideoFactoryAgent : MonoBehaviour
         _videoGenerateCompletedCallback.Invoke(path);
         Reset();
 
+
+        _agent.UpdateMessageTemp(path);
 
         Debug.Log("Saved recording to: " + path);
     }

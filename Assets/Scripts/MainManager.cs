@@ -30,6 +30,14 @@ public class MainManager : MonoBehaviour
 
         cards = new List<CardBaseAgent>();
 
+
+        for (int i = 0; i < Display.displays.Length; i++)
+        {
+            Display.displays[i].Activate();
+            Screen.SetResolution(Display.displays[i].renderingWidth, Display.displays[i].renderingHeight, true);
+        }
+
+
         //_cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
 
         //cards.Add(card1);
