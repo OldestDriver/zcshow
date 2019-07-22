@@ -401,13 +401,6 @@ public class VideoFactoryAgent : MonoBehaviour
     private void StartRecord() {
 
         _audioSource.Play();
-
-        //const float DownscaleFactor = 3 / 3;
-        //int w = (int)(Screen.width * DownscaleFactor);
-        //int h = (int)(Screen.height * DownscaleFactor);
-        //var configuration = new Configuration(w, h, 60);
-        //Replay.StartRecording(_camera, configuration, OnReplay);
-
         StartCoroutine(StartRecodingE());
 
     }
@@ -465,9 +458,29 @@ public class VideoFactoryAgent : MonoBehaviour
         Reset();
 
 
-        _agent.UpdateMessageTemp(path);
+        //_agent.UpdateMessageTemp(path);
+
+        _videoAddress = path;
 
         Debug.Log("Saved recording to: " + path);
     }
+
+    /// <summary>
+    /// 获取视频地址
+    /// </summary>
+    /// <returns></returns>
+    public string GetVideoAddress() {
+        return _videoAddress;
+    }
+
+
+
+    /// <summary>
+    ///     清理
+    /// </summary>
+    public void Clear() {
+        Reset();
+    }
+
 
 }

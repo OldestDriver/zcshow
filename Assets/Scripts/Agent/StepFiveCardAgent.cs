@@ -19,6 +19,14 @@ public class StepFiveCardAgent : CardBaseAgent
     [SerializeField] private RectTransform _resultRect;
     [SerializeField] private RawImage _qrCode;
 
+    [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
+
+    [SerializeField, Header("Card Index")] protected CardBaseAgent _HomeCard;
+
+    [SerializeField, Header("Mock")] protected bool _isMock;
+
+
+
 
     private bool _erCodeIsGenerated = false;
     private bool _showResultLock = false;
@@ -186,7 +194,15 @@ public class StepFiveCardAgent : CardBaseAgent
     {
 
         HTTPRequest request = new HTTPRequest(new Uri(qiniu_api), HTTPMethods.Post, UploadVideoRequestFinished);
-        request.AddBinaryData("file", GetVideoData(Application.dataPath + "/Out/1.mp4"));
+
+        if (_isMock)
+        {
+            request.AddBinaryData("file", GetVideoData(Application.dataPath + "/Out/1.mp4"));
+        }
+        else {
+            request.AddBinaryData("file", GetVideoData(_videoFactoryAgent.GetVideoAddress()));
+        }
+
         request.AddField("token", token);
         request.Send();
     }
@@ -311,4 +327,20 @@ public class StepFiveCardAgent : CardBaseAgent
             Error();
         }
     }
+
+    /// <summary>
+    ///     点击返回首页
+    /// </summary>
+    public void DoReturnHome() {
+
+        //  清理保存的数据
+        _videoFactoryAgent.Clear();
+
+        nextCard = _HomeCard;
+
+        DoRunOut();
+
+    }
+
+
 }
