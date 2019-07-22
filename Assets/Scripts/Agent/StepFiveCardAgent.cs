@@ -49,7 +49,7 @@ public class StepFiveCardAgent : CardBaseAgent
 
         _resultRect.gameObject.SetActive(false);
         _loadingRect.gameObject.SetActive(true);
-
+        
     }
 
     /// <summary>

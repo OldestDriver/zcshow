@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using System;
 
 public class CustomKeyboard : MonoBehaviour
 {
@@ -14,6 +15,14 @@ public class CustomKeyboard : MonoBehaviour
     private Text[] letters;
     private bool isCapital = true;//是否大写
     private bool isShow = false;
+
+
+    private Action _onClickEnter;
+
+    public void OnClickEnter(Action onClickEnter) {
+        _onClickEnter = onClickEnter;
+    }
+
 
 
     public void AlphaClick(string alpha)
@@ -86,6 +95,9 @@ public class CustomKeyboard : MonoBehaviour
     public void Enter()
     {
         GetComponent<RectTransform>().DOAnchorPosY(-1250, 0.3f);
+
+        _onClickEnter?.Invoke();
+
         isShow = false;
     }
 }

@@ -90,7 +90,7 @@ public class VideoFactoryAgent : MonoBehaviour
         doRunLock = false;
         doActiveLock = false;
         doFinishLock = false;
-        _videoAddress = "";
+        _videoAddress = Application.persistentDataPath;
 
         _photoTexs = new List<Texture2D>();
         _videoFactoryStatus = VideoFactoryStatus.Disabled;
@@ -453,7 +453,7 @@ public class VideoFactoryAgent : MonoBehaviour
 
     void OnReplay(string path)
     {
-
+        path = _videoAddress;
         _videoGenerateCompletedCallback.Invoke(path);
         Reset();
 
