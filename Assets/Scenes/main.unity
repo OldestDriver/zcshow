@@ -1103,7 +1103,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &159723476
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1183,6 +1183,7 @@ MonoBehaviour:
   _qrCode: {fileID: 349952145}
   _videoFactoryAgent: {fileID: 98471441}
   _HomeCard: {fileID: 713428702}
+  _isMock: 0
 --- !u!224 &173770707 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1351574337350920814, guid: e8dc44c3fb6b085408b494753fd455de,
@@ -5700,7 +5701,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &713428699
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5951,7 +5952,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.000061035156, y: -39.329926}
+  m_AnchoredPosition: {x: 0.000061035156, y: -39.32992}
   m_SizeDelta: {x: 0, y: 99.130005}
   m_Pivot: {x: 0.9584783, y: 0.10324034}
 --- !u!114 &735282723
