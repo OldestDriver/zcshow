@@ -22,6 +22,8 @@ public class StepFiveCardAgent : CardBaseAgent
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
 
     [SerializeField, Header("Card Index")] protected CardBaseAgent _HomeCard;
+    [SerializeField, Header("Keyboard")] protected CustomKeyboard _customKeyboard;
+
 
     [SerializeField, Header("Mock")] protected bool _isMock;
 
@@ -63,6 +65,8 @@ public class StepFiveCardAgent : CardBaseAgent
         GetErCode();
         //_erCodeIsGenerated = true;
         CompletePrepare();
+
+        _customKeyboard.OnClickEnter();
     }
 
     public override void DoRunIn()
@@ -109,7 +113,10 @@ public class StepFiveCardAgent : CardBaseAgent
 
     // 点击发送邮件
     public void OnClickSendEmail() {
-        DoSendEmail();
+        //DoSendEmail();
+
+        //TODO 点击回车回调
+
     }
 
 

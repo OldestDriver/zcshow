@@ -453,16 +453,13 @@ public class VideoFactoryAgent : MonoBehaviour
 
     void OnReplay(string path)
     {
-        path = _videoAddress;
-        _videoGenerateCompletedCallback.Invoke(path);
-        Reset();
-
-
         //_agent.UpdateMessageTemp(path);
-
         _videoAddress = path;
-
         Debug.Log("Saved recording to: " + path);
+
+        _videoGenerateCompletedCallback.Invoke(path);
+
+        Reset();
     }
 
     /// <summary>

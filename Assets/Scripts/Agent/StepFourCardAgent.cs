@@ -153,6 +153,7 @@ public class StepFourCardAgent : CardBaseAgent
 
         _previewVideoPlayer.url = videoUrl;
 
+
         _videoIsGenerateCompleted = true;
     }
 
