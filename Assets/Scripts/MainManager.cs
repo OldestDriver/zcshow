@@ -38,7 +38,7 @@ public class MainManager : MonoBehaviour
         }
 
 
-        //_cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
+        _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
 
         //cards.Add(card1);
         //cards.Add(card2);

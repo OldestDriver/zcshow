@@ -44,8 +44,6 @@ public class StepFourCardAgent : CardBaseAgent
     public override void DoPrepare() {
         Reset();
 
-
-
         // 此处处理视频拼接
         DoGenerateVideo();
 
@@ -106,7 +104,6 @@ public class StepFourCardAgent : CardBaseAgent
     public void OnClickRePhoto()
     {
         nextCard = _rephotoCardAgent;
-
         DoRunOut();
     }
 
@@ -154,6 +151,7 @@ public class StepFourCardAgent : CardBaseAgent
     {
         Debug.Log("Video 生成完成 ： " + videoUrl);
 
+        _previewVideoPlayer.url = videoUrl;
 
         _videoIsGenerateCompleted = true;
     }
@@ -176,6 +174,7 @@ public class StepFourCardAgent : CardBaseAgent
         }
         _previewVideoPlayerHolder.texture = _previewVideoPlayer.texture;
         _previewVideoPlayer.Play();
+
     }
 
 

@@ -16,6 +16,7 @@ public class CustomKeyboard : MonoBehaviour
     private bool isCapital = true;//是否大写
     private bool isShow = false;
 
+
     private Action _onClickEnter;
 
     public void OnClickEnter(Action onClickEnter) {
@@ -23,17 +24,6 @@ public class CustomKeyboard : MonoBehaviour
     }
 
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public void AlphaClick(string alpha)
     {

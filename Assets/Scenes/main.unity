@@ -769,7 +769,7 @@ MonoBehaviour:
   _scenario4C: {fileID: 216350410}
   _agent: {fileID: 1242330731}
   _record: 1
-  _isMock: 1
+  _isMock: 0
 --- !u!95 &98471443
 Animator:
   serializedVersion: 3
@@ -1103,7 +1103,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &159723476
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1176,12 +1176,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _NextCard: {fileID: 0}
-  _messageBoxAgent: {fileID: 0}
+  _messageBoxAgent: {fileID: 1242330731}
   emailInput: {fileID: 1931641713}
   _loadingContentRect: {fileID: 333506749}
   _loadingRect: {fileID: 765315758}
   _resultRect: {fileID: 437217033}
   _qrCode: {fileID: 349952145}
+  _videoFactoryAgent: {fileID: 98471441}
+  _HomeCard: {fileID: 713428702}
+  _isMock: 0
 --- !u!224 &173770707 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1351574337350920814, guid: e8dc44c3fb6b085408b494753fd455de,
@@ -2206,7 +2209,6 @@ GameObject:
   - component: {fileID: 361223050}
   - component: {fileID: 361223053}
   - component: {fileID: 361223052}
-  - component: {fileID: 361223051}
   m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
@@ -2234,23 +2236,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &361223051
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 361223049}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1301386320, guid: f70555f144d8491a825f0804e09c671c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_IgnoreReversedGraphics: 1
-  m_BlockingObjects: 0
-  m_BlockingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
 --- !u!114 &361223052
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5717,7 +5702,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &713428699
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5762,7 +5747,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _NextCard: {fileID: 1659769894}
-  _messageBoxAgent: {fileID: 0}
+  _messageBoxAgent: {fileID: 1242330731}
 --- !u!1 &725025896
 GameObject:
   m_ObjectHideFlags: 0
@@ -5968,7 +5953,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.000061035156, y: -39.329884}
+  m_AnchoredPosition: {x: 0.000061035156, y: -39.329884
   m_SizeDelta: {x: 0, y: 99.130005}
   m_Pivot: {x: 0.9584783, y: 0.10324034}
 --- !u!114 &735282723
