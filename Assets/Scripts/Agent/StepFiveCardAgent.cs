@@ -20,6 +20,9 @@ public class StepFiveCardAgent : CardBaseAgent
     [SerializeField] private RawImage _qrCode;
 
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
+    [SerializeField, Header("Video Factory - No Logo")] private VideoFactoryAgent _videoFactoryNoLogoAgent;
+
+    [SerializeField, Header("Preview")] private PreviewAgent _previewAgent;
 
     [SerializeField, Header("Card Index")] protected CardBaseAgent _HomeCard;
     [SerializeField, Header("Email")] Text _inputEmailText;
@@ -64,10 +67,10 @@ public class StepFiveCardAgent : CardBaseAgent
     /// 准备阶段
     /// </summary>
     public override void DoPrepare() {
-
         Reset();
 
         _inputEmailImage.color = _inputEmailDisableColor;
+
 
         // 获取小程序码
         GetErCode();
@@ -157,6 +160,8 @@ public class StepFiveCardAgent : CardBaseAgent
     /// </summary>
     private void GetErCode() {
 
+        _videoFactoryNoLogoAgent.DoActive(OnVideoNoLogoGenerate, false, false);
+
         // 上传视频功能
         //获取token
         GetToken();
@@ -198,9 +203,10 @@ public class StepFiveCardAgent : CardBaseAgent
             request.AddBinaryData("file", GetVideoData(Application.dataPath + "/Out/1.mp4"));
         }
         else {
-            request.AddBinaryData("file", GetVideoData(_videoFactoryAgent.GetVideoAddress()));
+            request.AddBinaryData("file", GetVideoData(_videoFactoryAgent.GetVideoAddress()), "Video.mp4");
         }
 
+        request.AddHeader("Accept", "application/json");
         request.AddField("token", token);
         request.Send();
     }
@@ -267,9 +273,9 @@ public class StepFiveCardAgent : CardBaseAgent
 
     void GetQRCode(string code)
     {
-        HTTPRequest request = new HTTPRequest(new Uri(h5_api + "/api/wxapp/getFileQrcode/code"), HTTPMethods.Get, GetQRCodeRequestFinished);
-        request.AddField("type", "beta_2");
-        request.AddField("code", code);
+        HTTPRequest request = new HTTPRequest(new Uri(h5_api + "/api/wxapp/getFileQrcode/" + code + "?type=beta_2"), HTTPMethods.Get, GetQRCodeRequestFinished);
+        //request.AddField("type", "beta_2");
+        //request.AddField("code", code);
         request.Send();
     }
 
@@ -336,7 +342,10 @@ public class StepFiveCardAgent : CardBaseAgent
         {
             //发送邮件成功
             Debug.Log("发送邮件成功");
-            _messageBoxAgent.UpdateMessageTemp("Success!");
+            _messageBoxAgent.UpdateMessageTemp("邮件发送成功!");
+
+            _customKeyboard.Hide();
+            _customKeyboard.ClearAll();
         }
         else
         {
@@ -383,6 +392,16 @@ public class StepFiveCardAgent : CardBaseAgent
         return true;
     }
 
+    void OnVideoNoLogoGenerate(string videoUrl)
+    {
+        Debug.Log("Video 生成完成 ： " + videoUrl);
 
+        //_previewVideoPlayer.url = videoUrl;
+
+        //_videoIsGenerateCompleted = true;
+
+        // 投屏
+        _previewAgent.UpdateVideo(_videoFactoryAgent.GetVideoAddress(), _videoFactoryNoLogoAgent.GetVideoAddress()) ;
+    }
 
 }

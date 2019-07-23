@@ -38,7 +38,7 @@ public class MainManager : MonoBehaviour
             Screen.SetResolution(Display.displays[i].renderingWidth, Display.displays[i].renderingHeight, true);
         }
 
-        
+        Display.displays[0].Activate();
 
 
         _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
