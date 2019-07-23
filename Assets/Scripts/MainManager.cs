@@ -26,17 +26,19 @@ public class MainManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Application.targetFrameRate = 90;
+        Application.targetFrameRate = 60;
+
         cards = new List<CardBaseAgent>();
 
 
-        Debug.Log("Display Counts : " + Display.displays.Length);
+        for (int i = 0; i < Display.displays.Length; i++)
+        {
+            Display.displays[i].Activate();
 
-        Display.displays[0].Activate();
-        Display.displays[0].SetRenderingResolution(1080, 1920);
+            Screen.SetResolution(Display.displays[i].renderingWidth, Display.displays[i].renderingHeight, true);
+        }
 
-        Display.displays[1].Activate();
-        Display.displays[1].SetRenderingResolution(1176, 1008);
+        
 
 
         _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
