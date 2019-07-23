@@ -22,6 +22,11 @@ public class StepFiveCardAgent : CardBaseAgent
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
 
     [SerializeField, Header("Card Index")] protected CardBaseAgent _HomeCard;
+    [SerializeField, Header("Email")] Text _inputEmailText;
+    [SerializeField] Color _inputEmailActiveColor;
+    [SerializeField] Color _inputEmailDisableColor;
+    [SerializeField] Image _inputEmailImage;
+
     [SerializeField, Header("Keyboard")] protected CustomKeyboard _customKeyboard;
 
 
@@ -30,6 +35,7 @@ public class StepFiveCardAgent : CardBaseAgent
 
 
     private bool _erCodeIsGenerated = false;
+    private bool _messageIdPrepared = false;    // messageId 用在确认是否可发送邮件
     private bool _showResultLock = false;
     private bool _sendingEmail = false;
 
@@ -47,8 +53,9 @@ public class StepFiveCardAgent : CardBaseAgent
         _erCodeIsGenerated = false;
         _showResultLock = false;
         _sendingEmail = false;
+        _messageIdPrepared = false;
 
-        _resultRect.gameObject.SetActive(false);
+        _resultRect.gameObject.SetActive(true);
         //_loadingRect.gameObject.SetActive(true);
         
     }
@@ -60,12 +67,16 @@ public class StepFiveCardAgent : CardBaseAgent
 
         Reset();
 
+        _inputEmailImage.color = _inputEmailDisableColor;
+
         // 获取小程序码
         GetErCode();
         //_erCodeIsGenerated = true;
+
+
         CompletePrepare();
 
-        //_customKeyboard.OnClickEnter();
+        _customKeyboard.OnClickEnter(DoSendEmail);
     }
 
     public override void DoRunIn()
@@ -112,42 +123,25 @@ public class StepFiveCardAgent : CardBaseAgent
 
     // 点击发送邮件
     public void OnClickSendEmail() {
-        //DoSendEmail();
-
-        //TODO 点击回车回调
-
+        DoSendEmail();
     }
 
-
-
-    /// <summary>
-    /// 加载动画
-    /// </summary>
-    private void DoLoading() {
-
-        float fillAmount = _loadingContentRect.GetComponent<Image>().fillAmount;
-        fillAmount = fillAmount + 0.01f;
-        if (fillAmount > 1f)
-        {
-            fillAmount = 0;
-        }
-        _loadingContentRect.GetComponent<Image>().fillAmount = fillAmount;
-
-    }
 
 
     private void ShowResult()
     {
-        _resultRect.gameObject.SetActive(true);
-        _loadingRect.gameObject.SetActive(false);
+        //_resultRect.gameObject.SetActive(true);
+        //_loadingRect.gameObject.SetActive(false);
         emailInput.ActivateInputField();
     }
 
     //开始输入邮件
     public void StartInputEmail()
     {
-        emailInput.ActivateInputField();
-        FindObjectOfType<CustomKeyboard>().Show();
+        if (_messageIdPrepared) {
+            emailInput.ActivateInputField();
+            FindObjectOfType<CustomKeyboard>().Show();
+        }
     }
 
 
@@ -254,11 +248,18 @@ public class StepFiveCardAgent : CardBaseAgent
             //Debug.Log(response.DataAsText);
             message_id = (int)data["data"]["options"]["mail"]["message"];
             string code = (string)data["data"]["code"];
-            Debug.Log("message_id：" + message_id);
+            //Debug.Log("message_id：" + message_id);
+
+            _messageIdPrepared = true;
+            _inputEmailImage.DOColor(_inputEmailActiveColor, 0.5f);
+
+
+
             GetQRCode(code);
         }
         else
         {
+            _messageIdPrepared = false;
             Debug.Log("上传文件路径失败" + data["message"]);
             Error();
         }
@@ -286,15 +287,15 @@ public class StepFiveCardAgent : CardBaseAgent
     }
 
     private void DoSendEmail() {
-        _sendingEmail = true;
 
+        _sendingEmail = true;
         Debug.Log("发送邮件！！！");
         //return;
-        SendEmain();
+        SendEmail();
     }
 
 
-    void SendEmain()
+    void SendEmail()
     {
         HTTPRequest request = new HTTPRequest(new Uri(api + "/api/mail/messages/" + message_id + "/send"), HTTPMethods.Post, SendEmainRequestFinished);
 
@@ -302,19 +303,30 @@ public class StepFiveCardAgent : CardBaseAgent
         request.AddHeader("Content-Type", "application/json");
         request.AddHeader("Accept", "application/json");
 
-        string address = "873074332@qq.com";
 
-        var fromJson = @"
+        // 设置地址
+
+        string address = _inputEmailText.text;
+
+        if (CheckEmailStr())
+        {
+            var fromJson = @"
             {
-                ""to""     : [{""email"" : """ + 
-                address 
-                + @"""}]}";
+                ""to""     : [{""email"" : """ +
+                    address
+                    + @"""}]}";
 
-        request.RawData = Encoding.UTF8.GetBytes(fromJson);
+            request.RawData = Encoding.UTF8.GetBytes(fromJson);
+            request.Send();
 
+            
+        }
+        else {
+            _messageBoxAgent.UpdateMessageTemp("Email is valid.");
+        }
 
+        //string address = "873074332@qq.com";
 
-        request.Send();
     }
 
     void SendEmainRequestFinished(HTTPRequest request, HTTPResponse response)
@@ -324,12 +336,16 @@ public class StepFiveCardAgent : CardBaseAgent
         {
             //发送邮件成功
             Debug.Log("发送邮件成功");
+            _messageBoxAgent.UpdateMessageTemp("Success!");
         }
         else
         {
             Debug.Log("发送邮件失败" + data["message"]);
             Error();
         }
+
+
+        _inputEmailText.text = "";
     }
 
     /// <summary>
@@ -345,6 +361,28 @@ public class StepFiveCardAgent : CardBaseAgent
         DoRunOut();
 
     }
+
+
+
+    /// <summary>
+    ///     点击空白
+    /// </summary>
+    public void DoClickEmpty() {
+        Debug.Log("Do Click Empty");
+        _customKeyboard.Hide();
+    }
+
+
+    private bool CheckEmailStr() {
+        string address = _inputEmailText.text;
+        if (address.Length == 0)
+            return false;
+        if (address.IndexOf("@") == -1) {
+            return false;
+        }
+        return true;
+    }
+
 
 
 }
