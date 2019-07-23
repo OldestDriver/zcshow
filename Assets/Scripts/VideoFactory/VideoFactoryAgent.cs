@@ -163,6 +163,8 @@ public class VideoFactoryAgent : MonoBehaviour
 
     public void OnAnimationEnd() {
         _audioSource.Stop();
+        Debug.Log("Stop OnAnimationEnd");
+
         _videoFactoryStatus = VideoFactoryStatus.Finish;
     }
 

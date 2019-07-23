@@ -27,15 +27,16 @@ public class MainManager : MonoBehaviour
     void Start()
     {
         Application.targetFrameRate = 90;
-
         cards = new List<CardBaseAgent>();
 
 
-        for (int i = 0; i < Display.displays.Length; i++)
-        {
-            Display.displays[i].Activate();
-            Screen.SetResolution(Display.displays[i].renderingWidth, Display.displays[i].renderingHeight, true);
-        }
+        Debug.Log("Display Counts : " + Display.displays.Length);
+
+        Display.displays[0].Activate();
+        Display.displays[0].SetRenderingResolution(1080, 1920);
+
+        Display.displays[1].Activate();
+        Display.displays[1].SetRenderingResolution(1176, 1008);
 
 
         _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
