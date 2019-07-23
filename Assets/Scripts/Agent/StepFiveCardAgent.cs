@@ -22,9 +22,10 @@ public class StepFiveCardAgent : CardBaseAgent
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
 
     [SerializeField, Header("Card Index")] protected CardBaseAgent _HomeCard;
+    [SerializeField, Header("Keyboard")] protected CustomKeyboard _customKeyboard;
+
 
     [SerializeField, Header("Mock")] protected bool _isMock;
-
 
 
 
@@ -48,7 +49,7 @@ public class StepFiveCardAgent : CardBaseAgent
         _sendingEmail = false;
 
         _resultRect.gameObject.SetActive(false);
-        _loadingRect.gameObject.SetActive(true);
+        //_loadingRect.gameObject.SetActive(true);
         
     }
 
@@ -63,6 +64,8 @@ public class StepFiveCardAgent : CardBaseAgent
         GetErCode();
         //_erCodeIsGenerated = true;
         CompletePrepare();
+
+        //_customKeyboard.OnClickEnter();
     }
 
     public override void DoRunIn()
@@ -80,7 +83,7 @@ public class StepFiveCardAgent : CardBaseAgent
         if (!_erCodeIsGenerated)
         {
             // 中间视频预览加载中
-            DoLoading();
+            //DoLoading();
         }
         else {
             if (!_showResultLock)
@@ -109,7 +112,10 @@ public class StepFiveCardAgent : CardBaseAgent
 
     // 点击发送邮件
     public void OnClickSendEmail() {
-        DoSendEmail();
+        //DoSendEmail();
+
+        //TODO 点击回车回调
+
     }
 
 
@@ -118,8 +124,6 @@ public class StepFiveCardAgent : CardBaseAgent
     /// 加载动画
     /// </summary>
     private void DoLoading() {
-
-        Debug.Log("DoLoading in five");
 
         float fillAmount = _loadingContentRect.GetComponent<Image>().fillAmount;
         fillAmount = fillAmount + 0.01f;

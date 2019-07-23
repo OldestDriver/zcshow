@@ -19,8 +19,13 @@ public static class StreamVideoPlayer {
         }
         texture2D.LoadImage(content);
 
+        float w = texture2D.width;
+        float h = texture2D.height;
+
         if (!flag) {
             flag = true;
+            screen.GetComponent<RectTransform>().sizeDelta = new Vector2(w * 1.5f, h * 1.5f);
+
             screen.texture = texture2D;
         }
 
