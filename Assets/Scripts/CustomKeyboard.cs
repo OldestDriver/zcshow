@@ -27,7 +27,7 @@ public class CustomKeyboard : MonoBehaviour
 
     public void AlphaClick(string alpha)
     {
-        word = word + alpha;
+        word = word  + alpha;
         SetInputFieldText();
     }
 
@@ -35,6 +35,17 @@ public class CustomKeyboard : MonoBehaviour
     {
         emailInput.text = word;
 
+    }
+
+
+    public void Hide() {
+        if (isShow)
+        {
+            word = "";
+            //CapitalClick();
+            GetComponent<RectTransform>().DOAnchorPosY(-1250, 0.3f);
+            isShow = false;
+        }
     }
 
 
@@ -46,7 +57,7 @@ public class CustomKeyboard : MonoBehaviour
             word = "";
             SetInputFieldText();
             //CapitalClick();
-            GetComponent<RectTransform>().DOAnchorPosY(-100, 0.3f);
+            GetComponent<RectTransform>().DOAnchorPosY(-150, 0.3f);
             isShow = true;
         }
     }
