@@ -24,8 +24,10 @@ public class StepFourCardAgent : CardBaseAgent
 
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
     [SerializeField] private Texture _recordTexture;
+    //[SerializeField, Header("Video Factory - No Logo")] private VideoFactoryAgent _videoFactoryNoLogoAgent;
+    //[SerializeField] private Texture _recordTextureNoLogo;
 
-
+    [SerializeField, Header("Preview")] private PreviewAgent _previewAgent;
 
 
     private bool _videoIsGenerateCompleted = false;
@@ -115,6 +117,8 @@ public class StepFourCardAgent : CardBaseAgent
 
         _videoFactoryAgent.StopPlayVideo();
 
+        //_previewAgent.UpdateVideo(_videoFactoryAgent.GetVideoAddress(),_videoFactoryNoLogoAgent.GetVideoAddress());
+
         DoRunOut();
     }
 
@@ -163,12 +167,9 @@ public class StepFourCardAgent : CardBaseAgent
     {
         Debug.Log("Video 生成完成 ： " + videoUrl);
 
-        //_previewVideoPlayer.url = videoUrl;
-
-
         _videoIsGenerateCompleted = true;
-    }
 
+    }
 
 
 

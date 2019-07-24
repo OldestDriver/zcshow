@@ -261,6 +261,9 @@ public class CameraManager : MonoBehaviour
         if (!_hasReceiveFrame)
         {
             _hasReceiveFrame = true;
+
+            Debug.Log("收到实时信号.");
+
             //_onConnectLiveShowAction.Invoke();
         }
 

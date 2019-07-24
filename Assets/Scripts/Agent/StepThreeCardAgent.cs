@@ -22,6 +22,7 @@ public class StepThreeCardAgent : CardBaseAgent
     [SerializeField, Header("Preview")] private RawImage _previewRawImage;//照片
     [SerializeField] private RawImage _previewPhoto;// 预览照片
     [SerializeField] private RectTransform _preparePrevRect;    // 准备预览画面
+    [SerializeField] private RectTransform _previewRect; // rect
 
     [SerializeField, Header("Dots")] private Color _color_dot_active;
     [SerializeField] private Color _color_dot;
@@ -30,6 +31,12 @@ public class StepThreeCardAgent : CardBaseAgent
 
     [SerializeField, Header("Camera Manager")] CameraManager _cameraManager;
     [SerializeField, Header("Video Factory Agent")] VideoFactoryAgent _videoFactoryAgent;
+    [SerializeField, Header("Video Factory Agent - Logo")] VideoFactoryAgent _videoFactoryAgentNoLogo;
+
+    [SerializeField, Header("Photo Mask")] private RectTransform photoMask1;
+    [SerializeField] private RectTransform photoMask2;
+    [SerializeField] private RectTransform photoMask3;
+
 
 
     [SerializeField,Header("倒计时时间")] int _CountDownNumCost = 3;//倒计时数字常量
@@ -109,6 +116,9 @@ public class StepThreeCardAgent : CardBaseAgent
     /// </summary>
     public override void DoPrepare() {
         Reset();
+
+        _previewRect.gameObject.SetActive(false);
+
         CompletePrepare();
     }
 
@@ -121,6 +131,11 @@ public class StepThreeCardAgent : CardBaseAgent
 
         // 获取实时取景
         _cameraManager.InitLiveShow(OnConnectLiveShowSuccess,OnConnectLiveShowFailed, _previewRawImage);
+
+        if (_connectLiveShowSuccess) {
+            _preparePrevRect.gameObject.SetActive(true);
+
+        }
 
         CompleteRunIn();
     }
@@ -150,6 +165,10 @@ public class StepThreeCardAgent : CardBaseAgent
 
     public override void DoRunOut()
     {
+        // 关闭取景流
+        _cameraManager.DisconnectLiveShow();
+
+
         // 开始生成视频       
         CompleteRunOut();
     }
@@ -283,6 +302,7 @@ public class StepThreeCardAgent : CardBaseAgent
 
         if (_countDownNum > 0)
         {
+            UpdatePhotoMask();
             _countdownText.text = _countDownNum.ToString();
             StartCoroutine(WaitForOneSecond());
         }
@@ -410,11 +430,17 @@ public class StepThreeCardAgent : CardBaseAgent
 
     #region 连接实时取景回调
     private void OnConnectLiveShowSuccess() {
+        Debug.Log("连接实时取景回调");
+
         _preparePrevRect.gameObject.SetActive(false);
         _previewRawImage.gameObject.SetActive(true);
 
         _connectLiveShowSuccess = true;
         _cameraIsPrepared = true;
+
+        _previewRect.gameObject.SetActive(true);
+
+
     }
 
     private void OnConnectLiveShowFailed()
@@ -436,6 +462,8 @@ public class StepThreeCardAgent : CardBaseAgent
 
         // 保持内容
         _videoFactoryAgent.AddPhotoTexture(tex);
+        _videoFactoryAgentNoLogo.AddPhotoTexture(tex);
+
         _currentPhotoTexture = tex;
 
         // 调整计数器
@@ -456,6 +484,31 @@ public class StepThreeCardAgent : CardBaseAgent
     }
     #endregion
 
+
+
+    /// <summary>
+    /// 更新取景框
+    /// </summary>
+    private void UpdatePhotoMask() {
+        if (_totalPicture == 0) {
+            photoMask1.gameObject.SetActive(true);
+            photoMask2.gameObject.SetActive(false);
+            photoMask3.gameObject.SetActive(false);
+        }
+        else if (_totalPicture == 1)
+        {
+            photoMask1.gameObject.SetActive(false);
+            photoMask2.gameObject.SetActive(true);
+            photoMask3.gameObject.SetActive(false);
+        }
+        else if (_totalPicture == 2)
+        {
+            photoMask1.gameObject.SetActive(false);
+            photoMask2.gameObject.SetActive(false);
+            photoMask3.gameObject.SetActive(true);
+        }
+
+    }
 
 
 }
