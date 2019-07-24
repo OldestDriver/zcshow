@@ -14,8 +14,12 @@ public class PreviewAgent : MonoBehaviour
 
     [SerializeField] VideoPlayer _mainVideoPlayer;
     [SerializeField] VideoPlayer _subVideoPlayer;
-    [SerializeField] VideoPlayer _mainVideoPlayerNew;
-    [SerializeField] VideoPlayer _subVideoPlayerNew;
+    [SerializeField] VideoPlayer _mainNewVideoPlayer;
+    [SerializeField] VideoPlayer _subNewVideoPlayer;
+
+    [SerializeField] int loopTime;
+
+    [SerializeField,Header("Is Mock")] bool _isMock;
 
 
     bool _mainIsPrepared = false;
@@ -24,8 +28,10 @@ public class PreviewAgent : MonoBehaviour
     bool _subNewIsParpared = false;
     bool _playLock = false;
     bool _playLockNew = false;
+    bool _stopNewVideoLock = false;
 
-    bool _showNew = false;
+    bool _showNew = false;  
+    int _loop = 0;
 
     private void Reset()
     {
@@ -37,59 +43,75 @@ public class PreviewAgent : MonoBehaviour
         _playLockNew = false;
     }
 
+    private void ResetLock() {
+        _stopNewVideoLock = false;
+        _playLock = false;
+        _playLockNew = false;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         StartCoroutine(LoadMainVideo());
         StartCoroutine(LoadSubVideo());
+
+        _mainNewVideoPlayer.loopPointReached += OnNewLoopReached;
+    }
+
+    void OnNewLoopReached(VideoPlayer source) {
+        Debug.Log("loop!");
+        _loop++;
+
+        if (_loop == 2) {
+            _showNew = false;
+            ResetLock();
+        }
     }
 
 
     // Update is called once per frame
     void Update()
     {
-        if (_mainIsPrepared && _subIsParpared) {
-            if (!_playLock) {
-                _playLock = true;
 
-                _screen.texture = _mainVideoPlayer.texture;
 
-                _leftScreen.texture = _subVideoPlayer.texture;
-                _left2Screen.texture = _subVideoPlayer.texture;
-                _rightScreen.texture = _subVideoPlayer.texture;
-                _right2Screen.texture = _subVideoPlayer.texture;
-
-                _subVideoPlayer.Play();
-                _mainVideoPlayer.Play();
-
-                Debug.Log("Play1");
-
-            }
-        }
-
-        if (_mainNewIsPrepared && _subNewIsParpared && _showNew)
+        if (!_showNew)
         {
-            if (!_playLockNew)
+            PlayDefaultVideo();
+
+        }
+        else {
+            if (_mainNewIsPrepared && _subNewIsParpared)
             {
-                _playLockNew = true;
-                _mainVideoPlayer.Stop();
-                _subVideoPlayer.Stop();
-
-                Debug.Log("Play2");
-
-
-                _leftScreen.texture = _subVideoPlayerNew.texture;
-                _left2Screen.texture = _subVideoPlayerNew.texture;
-                _rightScreen.texture = _subVideoPlayerNew.texture;
-                _right2Screen.texture = _subVideoPlayerNew.texture;
-
-                _screen.texture = _mainVideoPlayerNew.texture;
+                if (!_playLockNew)
+                {
+                    _playLockNew = true;
+                    _mainVideoPlayer.Pause();
+                    _subVideoPlayer.Pause();
 
 
-                _subVideoPlayerNew.Play();
-                _mainVideoPlayerNew.Play();
+                    _leftScreen.texture = _subNewVideoPlayer.texture;
+                    _left2Screen.texture = _subNewVideoPlayer.texture;
+                    _rightScreen.texture = _subNewVideoPlayer.texture;
+                    _right2Screen.texture = _subNewVideoPlayer.texture;
+
+                    _screen.texture = _mainNewVideoPlayer.texture;
+
+
+                    _subNewVideoPlayer.Play();
+                    _mainNewVideoPlayer.Play();
+                }
             }
         }
+
+        if (_isMock) {
+
+           
+
+
+        }
+
+
+
     }
 
     IEnumerator PrepareVideo()
@@ -111,17 +133,23 @@ public class PreviewAgent : MonoBehaviour
 
     public void UpdateVideo(string path,string pathNoLogo)
     {
-        Debug.Log("Path : " + path);
-        Debug.Log("pathNoLogo : " + pathNoLogo);
+        //Debug.Log("Path : " + path);
+        //Debug.Log("pathNoLogo : " + pathNoLogo);
 
         if (path == null || pathNoLogo == null) { }
         else {
-            _mainVideoPlayerNew.url = path;
+            ResetLock();
+
+            // 初始化必要数据
+            _loop = 0;
+
+            _mainNewVideoPlayer.url = path;
             StartCoroutine(LoadMainNewVideo());
 
-            _subVideoPlayerNew.url = pathNoLogo;
+            _subNewVideoPlayer.url = pathNoLogo;
             StartCoroutine(LoadSubNewVideo());
             _showNew = true;
+
         }
 
     }
@@ -158,8 +186,8 @@ public class PreviewAgent : MonoBehaviour
 
     IEnumerator LoadMainNewVideo()
     {
-        _mainVideoPlayerNew.Prepare();
-        while (!_mainVideoPlayerNew.isPrepared)
+        _mainNewVideoPlayer.Prepare();
+        while (!_mainNewVideoPlayer.isPrepared)
         {
             yield return new WaitForSeconds(1f);
             break;
@@ -172,8 +200,8 @@ public class PreviewAgent : MonoBehaviour
 
     IEnumerator LoadSubNewVideo()
     {
-        _subVideoPlayerNew.Prepare();
-        while (!_subVideoPlayerNew.isPrepared)
+        _subNewVideoPlayer.Prepare();
+        while (!_subNewVideoPlayer.isPrepared)
         {
             yield return new WaitForSeconds(1f);
             break;
@@ -181,4 +209,32 @@ public class PreviewAgent : MonoBehaviour
         }
         _subNewIsParpared = true;
     }
+
+
+
+
+
+    void PlayDefaultVideo() {
+        if (_mainIsPrepared && _subIsParpared)
+        {
+            if (!_playLock)
+            {
+                _playLock = true;
+
+                _screen.texture = _mainVideoPlayer.texture;
+
+                _leftScreen.texture = _subVideoPlayer.texture;
+                _left2Screen.texture = _subVideoPlayer.texture;
+                _rightScreen.texture = _subVideoPlayer.texture;
+                _right2Screen.texture = _subVideoPlayer.texture;
+
+                _subVideoPlayer.Play();
+                _mainVideoPlayer.Play();
+
+                Debug.Log("Play1");
+
+            }
+        }
+    }
+
 }

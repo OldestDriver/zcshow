@@ -78,4 +78,19 @@ public class StepOneCardAgent : CardBaseAgent
     }
 
 
+    public override void OnUpdateHandleTime()
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+
+    public override void OnKeepOpen()
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+
+    public override void OnCloseKeepOpen()
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+
 }

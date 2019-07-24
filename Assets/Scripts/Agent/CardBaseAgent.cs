@@ -120,4 +120,21 @@ public class CardBaseAgent : MonoBehaviour
         }
 
     }
+
+
+    public virtual void OnUpdateHandleTime()
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+
+    public virtual void OnKeepOpen()
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+
+    public virtual void OnCloseKeepOpen()
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+
 }

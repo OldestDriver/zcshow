@@ -20,7 +20,7 @@ public class StepFiveCardAgent : CardBaseAgent
     [SerializeField] private RawImage _qrCode;
 
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
-    [SerializeField, Header("Video Factory - No Logo")] private VideoFactoryAgent _videoFactoryNoLogoAgent;
+    [SerializeField, Header("Video Factory - No Logo")] private VideoFactoryNoLogoAgent _videoFactoryNoLogoAgent;
 
     [SerializeField, Header("Preview")] private PreviewAgent _previewAgent;
 
@@ -160,7 +160,7 @@ public class StepFiveCardAgent : CardBaseAgent
     /// </summary>
     private void GetErCode() {
 
-        _videoFactoryNoLogoAgent.DoActive(OnVideoNoLogoGenerate, false, false);
+        _videoFactoryNoLogoAgent.DoActive(OnVideoNoLogoGenerate);
 
         // 上传视频功能
         //获取token

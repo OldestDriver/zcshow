@@ -35,19 +35,22 @@ public class MainManager : MonoBehaviour
         {
             Display.displays[i].Activate();
 
-            Screen.SetResolution(Display.displays[i].renderingWidth, Display.displays[i].renderingHeight, true);
+            //Screen.SetResolution(Display.displays[i].renderingWidth, Display.displays[i].renderingHeight, true);
         }
 
-        Display.displays[0].Activate();
+        //Display.displays[0].Activate();
 
 
-        _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed);
+        _cameraManager.Init(OnConnectCamfiSuccess,OnConnectCamfiFailed,OnConnectCameraSuccess,OnConnectCameraFailed,OnCameraError);
 
-        //cards.Add(card1);
-        //cards.Add(card2);
-        //cards.Add(card3);
-        //cards.Add(card4);
-        //cards.Add(card5);
+        cards.Add(card1);
+        cards.Add(card2);
+        cards.Add(card3);
+        cards.Add(card4);
+        cards.Add(card5);
+
+        //foreach()
+
     }
 
     // Update is called once per frame
@@ -139,6 +142,27 @@ public class MainManager : MonoBehaviour
 
 
 
+    private void OnCameraError()
+    {
+        Debug.Log("内部发生了问题");
+    }
+
+
+
+
+    private void OnUpdateHandleTime() {
+
+    }
+
+    private void OnKeepOpen()
+    {
+
+    }
+
+    private void OnCloseKeepOpen()
+    {
+
+    }
 
 
 }
