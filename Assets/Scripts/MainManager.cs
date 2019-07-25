@@ -102,7 +102,6 @@ public class MainManager : MonoBehaviour
 
         card1.DoActive();
 
-
         _lastActiveTime = Time.time;
     }
 

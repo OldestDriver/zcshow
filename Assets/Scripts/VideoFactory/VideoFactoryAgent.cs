@@ -297,10 +297,6 @@ public class VideoFactoryAgent : MonoBehaviour
             if (!doActiveLock) {
                 doActiveLock = true;
 
-
-                //CheckVideoStatus();
-
-
                 _videoFactoryStatus = VideoFactoryStatus.Running;
             }
 
@@ -375,9 +371,6 @@ public class VideoFactoryAgent : MonoBehaviour
             _contentStatus = VideoFactoryContentStatus.Finish;
         }
     }
-
-
-
 
 
     /// <summary>

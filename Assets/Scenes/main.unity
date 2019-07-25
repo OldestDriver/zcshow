@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657844, g: 0.49641222, b: 0.57481694, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -6923,7 +6923,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 1.6e-43, w: 0.01171875}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
@@ -11146,7 +11146,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: -392, y: 691}
-  m_SizeDelta: {x: 3744, y: 1653.5999}
+  m_SizeDelta: {x: 3744, y: 1653.7361}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1126396703
 MonoBehaviour:
@@ -11548,7 +11548,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59717bee60d4f8e4592ef0848dc64101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _keepOpenTime: 0
+  _keepOpenTime: 60
   card1: {fileID: 713428702}
   card2: {fileID: 1659769894}
   card3: {fileID: 1896367245}
@@ -12535,7 +12535,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 058d4e94aea002840abf0d5aeee74342, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _videoPlayerResAgent: {fileID: 0}
+  _videoPlayerResAgent: {fileID: 1595125988}
   _image1: {fileID: 1866590047}
   _image2: {fileID: 502586594}
   _image3: {fileID: 1976758770}
@@ -15414,10 +15414,10 @@ MonoBehaviour:
   _rightScreen: {fileID: 1011520171}
   _right2Screen: {fileID: 1476157826}
   _screen: {fileID: 1093829333}
-  _mainNewVideoPlayerRect: {fileID: 0}
-  _subNewVideoPlayerRect: {fileID: 0}
-  _videoPlayResAgent: {fileID: 0}
-  loopTime: 3
+  _mainNewVideoPlayerRect: {fileID: 1447797146}
+  _subNewVideoPlayerRect: {fileID: 1590929667}
+  _videoPlayResAgent: {fileID: 1595125988}
+  loopTime: 2
   _isMock: 0
 --- !u!1001 &1501982481
 PrefabInstance:

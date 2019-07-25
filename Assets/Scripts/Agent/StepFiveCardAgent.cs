@@ -137,15 +137,12 @@ public class StepFiveCardAgent : CardBaseAgent
     /// </summary>
     public override void DoEnd() {
         Debug.Log("场景 5 结束");
-
         _NextCard.DoActive();
-
 
         _qrCodeRect.gameObject.SetActive(false);
         gameObject.SetActive(false);
 
         CompleteDoEnd();
-
     }
 
 
@@ -159,10 +156,6 @@ public class StepFiveCardAgent : CardBaseAgent
     private void ShowResult()
     {
         _OnCloseKeepOpenAction.Invoke();
-
-
-		//_resultRect.gameObject.SetActive(true);
-		//_loadingRect.gameObject.SetActive(false);
 		_qrCodeRect.gameObject.SetActive(true);
 		emailInput.ActivateInputField();
     }
@@ -397,12 +390,7 @@ public class StepFiveCardAgent : CardBaseAgent
     ///     点击返回首页
     /// </summary>
     public void DoReturnHome() {
-        Debug.Log("点击返回首页");
-
-
-
         _OnUpdateHandleTimeAction.Invoke();
-
 
         //  清理保存的数据
         _videoFactoryAgent.Clear();
@@ -410,10 +398,7 @@ public class StepFiveCardAgent : CardBaseAgent
 
         _NextCard = _HomeCard;
 
-        Debug.Log("Return Home");
-
         DoRunOut();
-
     }
 
 
@@ -423,7 +408,6 @@ public class StepFiveCardAgent : CardBaseAgent
     /// </summary>
     public void DoClickEmpty() {
         _OnUpdateHandleTimeAction.Invoke();
-
 
         Debug.Log("Do Click Empty");
         _customKeyboard.Hide();

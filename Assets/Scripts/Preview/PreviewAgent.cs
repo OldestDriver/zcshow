@@ -20,7 +20,6 @@ public class PreviewAgent : MonoBehaviour
     VideoPlayer _mainNewVideoPlayer;
     VideoPlayer _subNewVideoPlayer;
 
-
     [SerializeField] int loopTime;
     [SerializeField,Header("Is Mock")] bool _isMock;
 
