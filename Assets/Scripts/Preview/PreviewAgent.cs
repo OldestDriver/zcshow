@@ -12,13 +12,16 @@ public class PreviewAgent : MonoBehaviour
     [SerializeField] RawImage _right2Screen;
     [SerializeField] RawImage _screen;
 
-    [SerializeField] VideoPlayer _mainVideoPlayer;
-    [SerializeField] VideoPlayer _subVideoPlayer;
-    [SerializeField] VideoPlayer _mainNewVideoPlayer;
-    [SerializeField] VideoPlayer _subNewVideoPlayer;
+    [SerializeField] RectTransform _mainNewVideoPlayerRect;
+    [SerializeField] RectTransform _subNewVideoPlayerRect;
+
+    [SerializeField] VideoPlayResAgent _videoPlayResAgent;
+
+    VideoPlayer _mainNewVideoPlayer;
+    VideoPlayer _subNewVideoPlayer;
+
 
     [SerializeField] int loopTime;
-
     [SerializeField,Header("Is Mock")] bool _isMock;
 
 
@@ -32,6 +35,11 @@ public class PreviewAgent : MonoBehaviour
 
     bool _showNew = false;  
     int _loop = 0;
+
+
+    private VideoPlayer _mainVideoPlayer;
+    private VideoPlayer _subVideoPlayer;
+
 
     private void Reset()
     {
@@ -52,18 +60,19 @@ public class PreviewAgent : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        StartCoroutine(LoadMainVideo());
-        StartCoroutine(LoadSubVideo());
-
-        _mainNewVideoPlayer.loopPointReached += OnNewLoopReached;
+        //_mainNewVideoPlayer.loopPointReached += OnNewLoopReached;
     }
 
     void OnNewLoopReached(VideoPlayer source) {
-        Debug.Log("loop!");
         _loop++;
 
-        if (_loop == 2) {
+        if (_loop >= loopTime) {
             _showNew = false;
+
+            // 销毁
+            Destroy(_mainNewVideoPlayerRect.GetComponent<VideoPlayer>());
+            Destroy(_subNewVideoPlayerRect.GetComponent<VideoPlayer>());
+
             ResetLock();
         }
     }
@@ -85,9 +94,9 @@ public class PreviewAgent : MonoBehaviour
                 if (!_playLockNew)
                 {
                     _playLockNew = true;
-                    _mainVideoPlayer.Pause();
-                    _subVideoPlayer.Pause();
 
+					_videoPlayResAgent.StopPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemo);
+					_videoPlayResAgent.StopPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemoNoLogo);
 
                     _leftScreen.texture = _subNewVideoPlayer.texture;
                     _left2Screen.texture = _subNewVideoPlayer.texture;
@@ -99,6 +108,13 @@ public class PreviewAgent : MonoBehaviour
 
                     _subNewVideoPlayer.Play();
                     _mainNewVideoPlayer.Play();
+
+
+					_videoPlayResAgent.PrepareDefaultPlayer();
+
+                    _playLockNew = false;
+                    // 提前让原Video Player 准备
+
                 }
             }
         }
@@ -139,47 +155,37 @@ public class PreviewAgent : MonoBehaviour
         if (path == null || pathNoLogo == null) { }
         else {
             ResetLock();
+            _subNewIsParpared = false;
+            _mainNewIsPrepared = false;
 
             // 初始化必要数据
             _loop = 0;
 
+            _mainNewVideoPlayer = _mainNewVideoPlayerRect.gameObject.AddComponent<VideoPlayer>();
+            _mainNewVideoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+            _mainNewVideoPlayer.EnableAudioTrack(0, false);
+            _mainNewVideoPlayer.source = VideoSource.Url;
             _mainNewVideoPlayer.url = path;
+            _mainNewVideoPlayer.isLooping = true;
+            _mainNewVideoPlayer.loopPointReached += OnNewLoopReached;
+
+
+
+            _subNewVideoPlayer = _subNewVideoPlayerRect.gameObject.AddComponent<VideoPlayer>();
+            _subNewVideoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+            _subNewVideoPlayer.EnableAudioTrack(0, false);
+            _subNewVideoPlayer.source = VideoSource.Url;
+            _subNewVideoPlayer.url = pathNoLogo;
+            _subNewVideoPlayer.isLooping = true;
+
+
             StartCoroutine(LoadMainNewVideo());
 
-            _subNewVideoPlayer.url = pathNoLogo;
             StartCoroutine(LoadSubNewVideo());
             _showNew = true;
 
         }
 
-    }
-
-    IEnumerator LoadMainVideo()
-    {
-        _mainVideoPlayer.Prepare();
-        while (!_mainVideoPlayer.isPrepared)
-        {
-            yield return new WaitForSeconds(1);
-            break;
-        }
-
-
-
-        _mainIsPrepared = true;
-
-    }
-
-    IEnumerator LoadSubVideo()
-    {
-        _subVideoPlayer.Prepare();
-        while (!_subVideoPlayer.isPrepared)
-        {
-            yield return new WaitForSeconds(1f);
-            break;
-        }
-
-
-        _subIsParpared = true;
     }
 
 
@@ -215,11 +221,15 @@ public class PreviewAgent : MonoBehaviour
 
 
     void PlayDefaultVideo() {
-        if (_mainIsPrepared && _subIsParpared)
-        {
+        if (_videoPlayResAgent.IsPrepared()) {
+
             if (!_playLock)
             {
                 _playLock = true;
+
+                _mainVideoPlayer = _videoPlayResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemo);
+                _subVideoPlayer = _videoPlayResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemoNoLogo);
+
 
                 _screen.texture = _mainVideoPlayer.texture;
 
@@ -228,13 +238,16 @@ public class PreviewAgent : MonoBehaviour
                 _rightScreen.texture = _subVideoPlayer.texture;
                 _right2Screen.texture = _subVideoPlayer.texture;
 
-                _subVideoPlayer.Play();
                 _mainVideoPlayer.Play();
+                _subVideoPlayer.Play();
 
-                Debug.Log("Play1");
+                Debug.Log(" _mainVideoPlayer.Play();");
+                Debug.Log(" _subVideoPlayer.Play();");
+
 
             }
         }
     }
+
 
 }

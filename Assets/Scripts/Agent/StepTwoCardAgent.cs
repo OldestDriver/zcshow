@@ -3,13 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
-
+using System;
 
 public class StepTwoCardAgent : CardBaseAgent
 {
 
     //第二步
     //[SerializeField,Header("UI")] private Text _introduceText;
+
+    //  挂载的使用操作信息
+    private Action _OnUpdateHandleTimeAction;
+    private Action _OnKeepOpenAction;
+    private Action _OnCloseKeepOpenAction;
 
     void Reset()
     {
@@ -20,6 +25,9 @@ public class StepTwoCardAgent : CardBaseAgent
     /// </summary>
     public override void DoPrepare() {
         Reset();
+
+        _OnCloseKeepOpenAction.Invoke();
+        _OnUpdateHandleTimeAction.Invoke();
 
         //_introduceText.text = "";
         CompletePrepare();
@@ -52,6 +60,8 @@ public class StepTwoCardAgent : CardBaseAgent
     /// </summary>
     public override void DoEnd() {
         Debug.Log("场景2结束");
+        _OnUpdateHandleTimeAction.Invoke();
+
         _NextCard?.DoActive();
         CompleteDoEnd();
         gameObject.SetActive(false);
@@ -60,24 +70,26 @@ public class StepTwoCardAgent : CardBaseAgent
 
     // 点击开始拍摄
     public void OnClick() {
+        _OnUpdateHandleTimeAction.Invoke();
+
         DoRunOut();
     }
 
-
-    public override void OnUpdateHandleTime()
+    public override void OnUpdateHandleTime(Action action)
     {
-        Debug.Log("CardBaseAgent is runing!");
+        _OnUpdateHandleTimeAction = action;
     }
 
-    public override void OnKeepOpen()
+    public override void OnKeepOpen(Action action)
     {
-        Debug.Log("CardBaseAgent is runing!");
+        _OnKeepOpenAction = action;
     }
 
-    public override void OnCloseKeepOpen()
+    public override void OnCloseKeepOpen(Action action)
     {
-        Debug.Log("CardBaseAgent is runing!");
+        _OnCloseKeepOpenAction = action;
     }
+
 
 
 }
