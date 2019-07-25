@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
 {
+    [SerializeField, Header("System Config"),Range(1f,100f)] float _keepOpenTime;
+
     [SerializeField] CardBaseAgent card1;
     [SerializeField] CardBaseAgent card2;
     [SerializeField] CardBaseAgent card3;
@@ -22,6 +24,10 @@ public class MainManager : MonoBehaviour
 
     private bool _camfiConnect = false;
     private bool _cameraConnect = false;
+
+
+    private bool _isKeepOpen;
+    private float _lastActiveTime;
 
     // Start is called before the first frame update
     void Start()
@@ -49,8 +55,15 @@ public class MainManager : MonoBehaviour
         cards.Add(card4);
         cards.Add(card5);
 
-        //foreach()
+        //  装载
+        foreach (CardBaseAgent card in cards) {
+            card.OnUpdateHandleTime(OnUpdateHandleTime);
+            card.OnKeepOpen(OnKeepOpen);
+            card.OnCloseKeepOpen(OnCloseKeepOpen);
+        }
 
+
+        _lastActiveTime = Time.time;
     }
 
     // Update is called once per frame
@@ -96,6 +109,18 @@ public class MainManager : MonoBehaviour
         else if (!_cameraConnect) {
             _messageBoxAgent.UpdateMessage("未连接相机 ！");
         }
+
+
+        // 判断是否回到首页
+
+        if ((!_isKeepOpen) && ((Time.time - _lastActiveTime) > _keepOpenTime)) {
+            // 回到首页
+
+            ReStart();
+        }
+
+
+
 
 
     }
@@ -151,17 +176,19 @@ public class MainManager : MonoBehaviour
 
 
     private void OnUpdateHandleTime() {
-
+        _lastActiveTime = Time.time;
     }
 
     private void OnKeepOpen()
     {
-
+        _lastActiveTime = Time.time;
+        _isKeepOpen = true;
     }
 
     private void OnCloseKeepOpen()
     {
-
+        _lastActiveTime = Time.time;
+        _isKeepOpen = false;
     }
 
 

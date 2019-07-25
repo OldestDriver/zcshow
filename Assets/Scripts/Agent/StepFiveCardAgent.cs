@@ -51,6 +51,13 @@ public class StepFiveCardAgent : CardBaseAgent
 
     private int message_id;
 
+
+    //  挂载的使用操作信息
+    private Action _OnUpdateHandleTimeAction;
+    private Action _OnKeepOpenAction;
+    private Action _OnCloseKeepOpenAction;
+
+
     private void Reset()
     {
         _erCodeIsGenerated = false;
@@ -59,8 +66,10 @@ public class StepFiveCardAgent : CardBaseAgent
         _messageIdPrepared = false;
 
         _resultRect.gameObject.SetActive(true);
+
+        _customKeyboard.Hide();
         //_loadingRect.gameObject.SetActive(true);
-        
+
     }
 
     /// <summary>
@@ -69,13 +78,14 @@ public class StepFiveCardAgent : CardBaseAgent
     public override void DoPrepare() {
         Reset();
 
+        _OnKeepOpenAction.Invoke();
+
         _inputEmailImage.color = _inputEmailDisableColor;
 
 
         // 获取小程序码
         GetErCode();
         //_erCodeIsGenerated = true;
-
 
         CompletePrepare();
 
@@ -119,8 +129,12 @@ public class StepFiveCardAgent : CardBaseAgent
     /// 结束阶段
     /// </summary>
     public override void DoEnd() {
+        Debug.Log("场景 5 结束");
+
+        _NextCard?.DoActive();
+        CompleteDoEnd();
         gameObject.SetActive(false);
-        Debug.Log("场景4结束");
+
     }
 
 
@@ -133,6 +147,9 @@ public class StepFiveCardAgent : CardBaseAgent
 
     private void ShowResult()
     {
+        _OnCloseKeepOpenAction.Invoke();
+
+
         //_resultRect.gameObject.SetActive(true);
         //_loadingRect.gameObject.SetActive(false);
         emailInput.ActivateInputField();
@@ -141,6 +158,8 @@ public class StepFiveCardAgent : CardBaseAgent
     //开始输入邮件
     public void StartInputEmail()
     {
+        _OnUpdateHandleTimeAction.Invoke();
+
         if (_messageIdPrepared) {
             emailInput.ActivateInputField();
             FindObjectOfType<CustomKeyboard>().Show();
@@ -303,6 +322,9 @@ public class StepFiveCardAgent : CardBaseAgent
 
     void SendEmail()
     {
+        _OnKeepOpenAction.Invoke();
+
+
         HTTPRequest request = new HTTPRequest(new Uri(api + "/api/mail/messages/" + message_id + "/send"), HTTPMethods.Post, SendEmainRequestFinished);
 
 
@@ -355,17 +377,23 @@ public class StepFiveCardAgent : CardBaseAgent
 
 
         _inputEmailText.text = "";
+
+        _OnCloseKeepOpenAction.Invoke();
     }
 
     /// <summary>
     ///     点击返回首页
     /// </summary>
     public void DoReturnHome() {
+        _OnUpdateHandleTimeAction.Invoke();
+
 
         //  清理保存的数据
         _videoFactoryAgent.Clear();
 
         nextCard = _HomeCard;
+
+
 
         DoRunOut();
 
@@ -377,8 +405,12 @@ public class StepFiveCardAgent : CardBaseAgent
     ///     点击空白
     /// </summary>
     public void DoClickEmpty() {
+        _OnUpdateHandleTimeAction.Invoke();
+
+
         Debug.Log("Do Click Empty");
         _customKeyboard.Hide();
+
     }
 
 
@@ -404,4 +436,19 @@ public class StepFiveCardAgent : CardBaseAgent
         _previewAgent.UpdateVideo(_videoFactoryAgent.GetVideoAddress(), _videoFactoryNoLogoAgent.GetVideoAddress()) ;
     }
 
+
+    public override void OnUpdateHandleTime(Action action)
+    {
+        _OnUpdateHandleTimeAction = action;
+    }
+
+    public override void OnKeepOpen(Action action)
+    {
+        _OnKeepOpenAction = action;
+    }
+
+    public override void OnCloseKeepOpen(Action action)
+    {
+        _OnCloseKeepOpenAction = action;
+    }
 }

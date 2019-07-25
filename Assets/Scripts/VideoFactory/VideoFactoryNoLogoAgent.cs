@@ -10,14 +10,16 @@ using NatCorderU.Core;
 public class VideoFactoryNoLogoAgent : MonoBehaviour
 {
     // 视频幕布
+    [SerializeField] VideoPlayResAgent _videoPlayerResAgent;
+
     [SerializeField, Header("Video 1")] RawImage _image1;
-    [SerializeField] VideoPlayer _videoPlayer1;
+    VideoPlayer _videoPlayer1;
 
     [SerializeField, Header("Video 2")] RawImage _image2;
-    [SerializeField] VideoPlayer _videoPlayer2;
+    VideoPlayer _videoPlayer2;
 
-    [SerializeField, Header("Video 3")] VideoPlayer _videoPlayer3;
-    [SerializeField] RawImage _image3;
+    [SerializeField, Header("Video 3")]  RawImage _image3;
+    VideoPlayer _videoPlayer3;
 
     [SerializeField, Header("Camera")] Camera _camera;
     [SerializeField] Animator _animator;
@@ -181,7 +183,17 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
 
         _videoGenerateCompletedCallback = completeCallBack;
 
+
+        _videoPlayer1 = _videoPlayerResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerRecordNoLogoFirst);
+        _videoPlayer2 = _videoPlayerResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerSecond);
+        _videoPlayer3 = _videoPlayerResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerThird);
+        _image1.texture = _videoPlayer1.texture;
+        _image2.texture = _videoPlayer2.texture;
+        _image3.texture = _videoPlayer3.texture;
+
+
         _videoFactoryStatus = VideoFactoryStatus.Prepare;
+
     }
 
 
@@ -260,21 +272,23 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
                 _scenario4C.sprite = spriteC;
 
 
-                //  准备好视频
-                LoadVideo();
-            }
-
-            if (!_sourceVideoIsPrepared)
-            {
-                CheckVideoStatus();
-            }
-
-            if (_sourceVideoIsPrepared)
-            {
-                Debug.Log("_sourceVideoIsPrepared");
-
                 _videoFactoryStatus = VideoFactoryStatus.Running;
+
+                //  准备好视频
+                //LoadVideo();
             }
+
+            //if (!_sourceVideoIsPrepared)
+            //{
+            //    CheckVideoStatus();
+            //}
+
+            //if (_sourceVideoIsPrepared)
+            //{
+            //    Debug.Log("_sourceVideoIsPrepared");
+
+            //    _videoFactoryStatus = VideoFactoryStatus.Running;
+            //}
         }
 
 

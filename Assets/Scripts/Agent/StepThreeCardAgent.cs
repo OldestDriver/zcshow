@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 using UnityEngine;
@@ -62,6 +63,14 @@ public class StepThreeCardAgent : CardBaseAgent
 
     private bool flag;
 
+
+    //  挂载的使用操作信息
+    private Action _OnUpdateHandleTimeAction;
+    private Action _OnKeepOpenAction;
+    private Action _OnCloseKeepOpenAction;
+
+
+
     private void Reset() {
         _countDownNum = _CountDownNumCost;
         _totalPicture = 0;
@@ -113,6 +122,10 @@ public class StepThreeCardAgent : CardBaseAgent
     public override void DoPrepare() {
         Reset();
 
+        _OnKeepOpenAction.Invoke();
+
+        gameObject.SetActive(true);
+
         _previewRect.gameObject.SetActive(false);
 
         CompletePrepare();
@@ -128,9 +141,16 @@ public class StepThreeCardAgent : CardBaseAgent
         _cameraManager.InitLiveShow(OnConnectLiveShowSuccess, OnConnectLiveShowFailed, _liveViewContent);
 
         if (_connectLiveShowSuccess) {
-            _preparePrevRect.gameObject.SetActive(true);
+            _preparePrevRect.gameObject.SetActive(false);
+
+            // 显示取景控件
+            _liveViewContent.gameObject.SetActive(true);
+            _previewRect.gameObject.SetActive(true);
+
+            ShowImage();
 
         }
+
 
         CompleteRunIn();
     }
@@ -141,6 +161,7 @@ public class StepThreeCardAgent : CardBaseAgent
     public override void DoRun() {
 
         if (_connectLiveShowSuccess) {
+
             // 依次拍摄三张照片
             if (!_beginFlowComplete)
             {
@@ -262,11 +283,10 @@ public class StepThreeCardAgent : CardBaseAgent
 
     private void DoCountDown() {
         // 设置文字
+
         _titleText.text = "准备拍摄第" + (_totalPicture + 1) + "张照片";
 
         _previewPhoto.gameObject.SetActive(false);
-
-        Debug.Log("DoCountDown");
 
         if (_countDownNum > 0)
         {
@@ -484,5 +504,18 @@ public class StepThreeCardAgent : CardBaseAgent
 
     }
 
+    public override void OnUpdateHandleTime(Action action)
+    {
+        _OnUpdateHandleTimeAction = action;
+    }
 
+    public override void OnKeepOpen(Action action)
+    {
+        _OnKeepOpenAction = action;
+    }
+
+    public override void OnCloseKeepOpen(Action action)
+    {
+        _OnCloseKeepOpenAction = action;
+    }
 }

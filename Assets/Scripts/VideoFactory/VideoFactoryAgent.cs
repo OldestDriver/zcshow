@@ -10,16 +10,17 @@ using NatCorderU.Core;
 public class VideoFactoryAgent : MonoBehaviour
 {
     // 视频幕布
+    [SerializeField] VideoPlayResAgent _videoPlayerResAgent;
+
     [SerializeField, Header("Video 1")] RawImage _image1;
-    [SerializeField] VideoPlayer _videoPlayer1;
+    VideoPlayer _videoPlayer1;
 
     [SerializeField, Header("Video 2")] RawImage _image2;
-    [SerializeField] VideoPlayer _videoPlayer2;
+    VideoPlayer _videoPlayer2;
 
     [SerializeField, Header("Video 3")] RawImage _image3;
-    [SerializeField, Header("Video 4")] VideoPlayer _videoPlayer3;
+    VideoPlayer _videoPlayer3;
 
-    [SerializeField] VideoPlayer _videoPlayer4;
 
     [SerializeField, Header("Audio")] AudioSource _audioSource;
     [SerializeField, Header("Audio")] AudioListener _audioListener;
@@ -187,36 +188,22 @@ public class VideoFactoryAgent : MonoBehaviour
 
         ResetForInit();
 
-        _videoGenerateCompletedCallback = completeCallBack;
-
-        _videoFactoryStatus = VideoFactoryStatus.Prepare;
-    }
-
-    public void DoActive(Action<string> completeCallBack,bool isLoop)
-    {
-        //Reset();
-        ResetForInit();
-
-        _isLoop = isLoop;
         _isRecordMusic = true;
 
-        _videoGenerateCompletedCallback = completeCallBack;
-
-        _videoFactoryStatus = VideoFactoryStatus.Prepare;
-    }
-
-    public void DoActive(Action<string> completeCallBack, bool isLoop,bool recordMusic)
-    {
-        //Reset();
-        ResetForInit();
-
-        _isLoop = isLoop;
-
-        _isRecordMusic = recordMusic;
 
         _videoGenerateCompletedCallback = completeCallBack;
 
         _videoFactoryStatus = VideoFactoryStatus.Prepare;
+
+
+        _videoPlayer1 = _videoPlayerResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerRecordFirst);
+        _videoPlayer2 = _videoPlayerResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerSecond);
+        _videoPlayer3 = _videoPlayerResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerThird);
+        _image1.texture = _videoPlayer1.texture;
+        _image2.texture = _videoPlayer2.texture;
+        _image3.texture = _videoPlayer3.texture;
+
+
     }
 
 
@@ -295,21 +282,25 @@ public class VideoFactoryAgent : MonoBehaviour
                 _scenario4C.sprite = spriteC;
 
 
-                //  准备好视频
-                LoadVideo();
+                ////  准备好视频
+                //LoadVideo();
+
+                 _videoFactoryStatus = VideoFactoryStatus.Running;
+
+
             }
 
-            if (!_sourceVideoIsPrepared)
-            {
-                CheckVideoStatus();
-            }
+            //if (!_sourceVideoIsPrepared)
+            //{
+            //    CheckVideoStatus();
+            //}
 
-            if (_sourceVideoIsPrepared)
-            {
-                Debug.Log("_sourceVideoIsPrepared");
+            //if (_sourceVideoIsPrepared)
+            //{
+            //    Debug.Log("_sourceVideoIsPrepared");
 
-                _videoFactoryStatus = VideoFactoryStatus.Running;
-            }
+            //    _videoFactoryStatus = VideoFactoryStatus.Running;
+            //}
         }
 
 
@@ -322,12 +313,8 @@ public class VideoFactoryAgent : MonoBehaviour
             if (!doActiveLock) {
                 doActiveLock = true;
 
-                Debug.Log("2");
-
 
                 CheckVideoStatus();
-
-                Debug.Log("1111");
 
 
                 _videoFactoryStatus = VideoFactoryStatus.Running;
@@ -383,17 +370,21 @@ public class VideoFactoryAgent : MonoBehaviour
                 }
 
 
-                if (_isLoop)
-                {
-                    ResetLock();
-                    _videoFactoryStatus = VideoFactoryStatus.Active;
-                    Debug.Log("Loop Video");
+                Reset();
 
-                }
-                else {
-                    //  结束并重置
-                    Reset();
-                }
+                //if (_isLoop)
+                //{
+                //    Debug.Log("完成路线播放1");
+
+                //    ResetLock();
+                //    _videoFactoryStatus = VideoFactoryStatus.Active;
+                //    Debug.Log("Loop Video");
+
+                //}
+                //else {
+                //    //  结束并重置
+                //    Reset();
+                //}
             }
         }
 
@@ -421,7 +412,6 @@ public class VideoFactoryAgent : MonoBehaviour
         StartCoroutine(PrepareVideo1());
         StartCoroutine(PrepareVideo2());
         StartCoroutine(PrepareVideo3());
-        StartCoroutine(PrepareVideo4());
     }
 
     //step1
@@ -470,45 +460,11 @@ public class VideoFactoryAgent : MonoBehaviour
         //StartRecord();
     }
 
-    IEnumerator PrepareVideo4()
-    {
-        _videoPlayer4.Prepare();
-        while (!_videoPlayer4.isPrepared)
-        {
-            Debug.Log("_videoPlayer4 is prepared");
-
-            yield return new WaitForSeconds(1);
-            break;
-        }
-        _video4Prepared = true;
-        //_image1.texture = _videoPlayer4.texture;
-
-        //StartRecord();
-    }
-
 
     private void CheckVideoStatus(){
-        if (_video1Prepared && _video2Prepared && _video3Prepared && _video4Prepared)
+        if (_video1Prepared && _video2Prepared && _video3Prepared)
         {
-            //if (_videoPlayer4 == null)
-            //{
-            //    _sourceVideoIsPrepared = true;
-
-            //}
-            //else {
-            //    if (_video4Prepared)
-            //    {
-            //        _sourceVideoIsPrepared = true;
-            //    }
-            //    else {
-            //        _sourceVideoIsPrepared = false;
-
-            //    }
-
-            //}
              _sourceVideoIsPrepared = true;
-
-
         }
         else {
             _sourceVideoIsPrepared = false;
@@ -547,7 +503,7 @@ public class VideoFactoryAgent : MonoBehaviour
 
         if (_isRecordMusic)
         {
-            Replay.StartRecording(_camera, configuration, OnReplay, _audioSource);
+            Replay.StartRecording(_camera, configuration, OnReplay, _audioSource,true);
         }
         else {
             Replay.StartRecording(_camera, configuration, OnReplay);
@@ -573,12 +529,8 @@ public class VideoFactoryAgent : MonoBehaviour
 
 
     void OnReplay(string path)
-    {
-        //_agent.UpdateMessageTemp(path);
-    
-
+    {    
         _videoAddress = path;
-
         _videoGenerateCompletedCallback.Invoke(path);
 
         Reset();
@@ -613,6 +565,9 @@ public class VideoFactoryAgent : MonoBehaviour
             //_animator.StopRecording();
             _audioSource.Stop();
             Replay.StopRecording();
+
+            Debug.Log("StopPlayVideoAndClear "); 
+
         }
 
         Reset();
