@@ -132,10 +132,18 @@ public class CardBaseAgent : MonoBehaviour
     {
         Debug.Log("CardBaseAgent is runing!");
     }
-
     public virtual void OnCloseKeepOpen(Action action)
     {
         Debug.Log("CardBaseAgent is runing!");
+    }
+
+    /// <summary>
+    ///     当异常发生时
+    /// </summary>
+    /// <param name="action"></param>
+    public virtual void OnErrorHappend(Action action)
+    {
+        Debug.Log("OnErrorHappend is runing!");
     }
 
 }

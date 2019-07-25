@@ -44,6 +44,7 @@ public class StepFourCardAgent : CardBaseAgent
     private Action _OnKeepOpenAction;
     private Action _OnCloseKeepOpenAction;
 
+    private Action _OnErrorHappened;
 
     private void Reset()
     {
@@ -269,4 +270,8 @@ public class StepFourCardAgent : CardBaseAgent
         _OnCloseKeepOpenAction = action;
     }
 
+    public override void OnErrorHappend(Action action)
+    {
+        _OnErrorHappened = action;
+    }
 }

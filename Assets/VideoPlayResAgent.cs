@@ -13,7 +13,6 @@ public class VideoPlayResAgent : MonoBehaviour
 
     [SerializeField] VideoPlayer _videoPlayerDemo;
     [SerializeField] VideoPlayer _videoPlayerDemoNoLogo;
-
     [SerializeField] MessageBoxAgent _messageBoxAgent;
 
 
@@ -27,10 +26,8 @@ public class VideoPlayResAgent : MonoBehaviour
     bool _videoPlayerRecordNoLogoFirstPrepared = false;
     bool _videoPlayerSecondPrepared = false;
     bool _videoPlayerThirdPrepared = false;
-
     bool _videoPlayerDemoPrepared = false;
     bool _videoPlayerDemoNoLogoPrepared = false;
-
 
     bool _videoPlayerDemoIsPreparing = false;
     bool _videoPlayerDemoNoLogoIsPreparing = false;
@@ -41,7 +38,6 @@ public class VideoPlayResAgent : MonoBehaviour
 
 	private bool doPreparedLock = false;
     private bool _prepareDefaultLock = false;
-
 
     void Start()
     {
@@ -79,22 +75,22 @@ public class VideoPlayResAgent : MonoBehaviour
         }
         else {
             if (!_videoPlayerRecordFirstPrepared) {
-                Debug.Log("_videoPlayerRecordFirstPrepared error");
+                //Debug.Log("_videoPlayerRecordFirstPrepared error");
             }
 
             if (!_videoPlayerRecordNoLogoFirstPrepared)
             {
-                Debug.Log("_videoPlayerRecordNoLogoFirstPrepared error");
+                //Debug.Log("_videoPlayerRecordNoLogoFirstPrepared error");
             }
 
             if (!_videoPlayerSecondPrepared)
             {
-                Debug.Log("_videoPlayerSecondPrepared error");
+                //Debug.Log("_videoPlayerSecondPrepared error");
             }
 
             if (!_videoPlayerThirdPrepared)
             {
-                Debug.Log("_videoPlayerThirdPrepared error");
+                //Debug.Log("_videoPlayerThirdPrepared error");
             }
 
             if (!_videoPlayerDemoPrepared)
@@ -104,7 +100,7 @@ public class VideoPlayResAgent : MonoBehaviour
                     DoPrepared(VideoPlayerType.videoPlayerDemo);
                 }
 
-                Debug.Log("_videoPlayerDemoPrepared error");
+                //Debug.Log("_videoPlayerDemoPrepared error");
             }
 
             if (!_videoPlayerDemoNoLogoPrepared)
@@ -114,7 +110,7 @@ public class VideoPlayResAgent : MonoBehaviour
                     _videoPlayerDemoNoLogoIsPreparing = true;
                     DoPrepared(VideoPlayerType.videoPlayerDemoNoLogo);
                 }
-                Debug.Log("_videoPlayerDemoNoLogoPrepared error");
+                //Debug.Log("_videoPlayerDemoNoLogoPrepared error");
             }
 
             //_messageBoxAgent.UpdateMessageTemp("视频未准备完成");
@@ -205,6 +201,7 @@ public class VideoPlayResAgent : MonoBehaviour
             {
                 DoPreparedFirst(VideoPlayerType.videoPlayerDemoNoLogo);
             }
+            _prepareDefaultLock = false;
         }
     }
 
@@ -224,7 +221,7 @@ public class VideoPlayResAgent : MonoBehaviour
 	private void DoPreparedFirst(VideoPlayerType videoPlayerType)
 	{
 
-		Debug.Log("正在准备 : " + videoPlayerType);
+		//Debug.Log("正在准备 : " + videoPlayerType);
 
 		VideoPlayer vp = GetVideoPlayer(videoPlayerType);
 		if (!vp.isPrepared)
@@ -262,7 +259,7 @@ public class VideoPlayResAgent : MonoBehaviour
 
 		}
 
-		Debug.Log("准备完成 : " + videoPlayerType);
+		//Debug.Log("准备完成 : " + videoPlayerType);
         UpdatePreparingStatus(videoPlayerType, false);
 
 

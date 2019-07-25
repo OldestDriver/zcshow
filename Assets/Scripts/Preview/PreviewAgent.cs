@@ -81,78 +81,25 @@ public class PreviewAgent : MonoBehaviour
     void Update()
     {
 
-
         if (!_showNew)
         {
             PlayDefaultVideo();
-
         }
         else {
-            if (_mainNewIsPrepared && _subNewIsParpared)
-            {
-                if (!_playLockNew)
-                {
-                    _playLockNew = true;
-
-					_videoPlayResAgent.StopPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemo);
-					_videoPlayResAgent.StopPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemoNoLogo);
-
-                    _leftScreen.texture = _subNewVideoPlayer.texture;
-                    _left2Screen.texture = _subNewVideoPlayer.texture;
-                    _rightScreen.texture = _subNewVideoPlayer.texture;
-                    _right2Screen.texture = _subNewVideoPlayer.texture;
-
-                    _screen.texture = _mainNewVideoPlayer.texture;
-
-
-                    _subNewVideoPlayer.Play();
-                    _mainNewVideoPlayer.Play();
-
-
-					_videoPlayResAgent.PrepareDefaultPlayer();
-
-                    _playLockNew = false;
-                    // 提前让原Video Player 准备
-
-                }
-            }
+            PlayNewVideo();
+            
         }
-
-        if (_isMock) {
-
-           
-
-
-        }
-
-
-
     }
 
-    IEnumerator PrepareVideo()
-    {
-        _subVideoPlayer.Prepare();
-        while (!_subVideoPlayer.isPrepared)
-        {
-            yield return new WaitForSeconds(1);
-            break;
-        }
-        _leftScreen.texture = _subVideoPlayer.texture;
-        _left2Screen.texture = _subVideoPlayer.texture;
-        _rightScreen.texture = _subVideoPlayer.texture;
-        _right2Screen.texture = _subVideoPlayer.texture;
-        _screen.texture = _subVideoPlayer.texture;
-        _subVideoPlayer.Play();
-
-    }
 
     public void UpdateVideo(string path,string pathNoLogo)
     {
-        //Debug.Log("Path : " + path);
-        //Debug.Log("pathNoLogo : " + pathNoLogo);
-
-        if (path == null || pathNoLogo == null) { }
+        if (path == null || pathNoLogo == null) {
+            Debug.Log("投屏数据缺失 ： p - " + (path == null) + "| pnl : " + (pathNoLogo == null));
+        }
         else {
+            Debug.Log("正在进行投屏数据处理");
+
             ResetLock();
             _subNewIsParpared = false;
             _mainNewIsPrepared = false;
@@ -160,31 +107,13 @@ public class PreviewAgent : MonoBehaviour
             // 初始化必要数据
             _loop = 0;
 
-            _mainNewVideoPlayer = _mainNewVideoPlayerRect.gameObject.AddComponent<VideoPlayer>();
-            _mainNewVideoPlayer.audioOutputMode = VideoAudioOutputMode.None;
-            _mainNewVideoPlayer.EnableAudioTrack(0, false);
-            _mainNewVideoPlayer.source = VideoSource.Url;
-            _mainNewVideoPlayer.url = path;
-            _mainNewVideoPlayer.isLooping = true;
-            _mainNewVideoPlayer.loopPointReached += OnNewLoopReached;
-
-
-
-            _subNewVideoPlayer = _subNewVideoPlayerRect.gameObject.AddComponent<VideoPlayer>();
-            _subNewVideoPlayer.audioOutputMode = VideoAudioOutputMode.None;
-            _subNewVideoPlayer.EnableAudioTrack(0, false);
-            _subNewVideoPlayer.source = VideoSource.Url;
-            _subNewVideoPlayer.url = pathNoLogo;
-            _subNewVideoPlayer.isLooping = true;
-
+            _mainNewVideoPlayer = CreateNewVideoPlayer(path, _mainNewVideoPlayerRect,true);
+            _subNewVideoPlayer = CreateNewVideoPlayer(pathNoLogo, _subNewVideoPlayerRect, false);
 
             StartCoroutine(LoadMainNewVideo());
-
             StartCoroutine(LoadSubNewVideo());
             _showNew = true;
-
         }
-
     }
 
 
@@ -229,7 +158,6 @@ public class PreviewAgent : MonoBehaviour
                 _mainVideoPlayer = _videoPlayResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemo);
                 _subVideoPlayer = _videoPlayResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemoNoLogo);
 
-
                 _screen.texture = _mainVideoPlayer.texture;
 
                 _leftScreen.texture = _subVideoPlayer.texture;
@@ -240,12 +168,48 @@ public class PreviewAgent : MonoBehaviour
                 _mainVideoPlayer.Play();
                 _subVideoPlayer.Play();
 
-                Debug.Log(" _mainVideoPlayer.Play();");
-                Debug.Log(" _subVideoPlayer.Play();");
-
-
             }
         }
+    }
+
+    void PlayNewVideo() {
+        if (_mainNewIsPrepared && _subNewIsParpared)
+        {
+            if (!_playLockNew)
+            {
+                _playLockNew = true;
+
+                _videoPlayResAgent.StopPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemo);
+                _videoPlayResAgent.StopPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemoNoLogo);
+
+                _leftScreen.texture = _subNewVideoPlayer.texture;
+                _left2Screen.texture = _subNewVideoPlayer.texture;
+                _rightScreen.texture = _subNewVideoPlayer.texture;
+                _right2Screen.texture = _subNewVideoPlayer.texture;
+                _screen.texture = _mainNewVideoPlayer.texture;
+
+                _subNewVideoPlayer.Play();
+                _mainNewVideoPlayer.Play();
+
+                // 提前让原Video Player 准备
+                _videoPlayResAgent.PrepareDefaultPlayer();
+
+                _playLockNew = false;
+            }
+        }
+    }
+
+    VideoPlayer CreateNewVideoPlayer(string path,RectTransform parentComponent,bool addLoopEvent) {
+        VideoPlayer videoPlayer = parentComponent.gameObject.AddComponent<VideoPlayer>();
+        videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+        videoPlayer.EnableAudioTrack(0, false);
+        videoPlayer.source = VideoSource.Url;
+        videoPlayer.url = path;
+        videoPlayer.isLooping = true;
+        if (addLoopEvent) {
+            videoPlayer.loopPointReached += OnNewLoopReached;
+        }
+        return videoPlayer;
     }
 
 

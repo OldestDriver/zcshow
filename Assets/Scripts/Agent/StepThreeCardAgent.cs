@@ -69,6 +69,8 @@ public class StepThreeCardAgent : CardBaseAgent
     private Action _OnKeepOpenAction;
     private Action _OnCloseKeepOpenAction;
 
+    private Action _OnErrorHappened;
+
 
 
     private void Reset() {
@@ -205,7 +207,6 @@ public class StepThreeCardAgent : CardBaseAgent
 
 
 
-
     /// <summary>
     /// 开始拍照流程
     /// </summary>
@@ -328,8 +329,6 @@ public class StepThreeCardAgent : CardBaseAgent
 
             _currentPhotoTexture = texture2D;
 
-            //_currentPhotoTexture = _lastTextureBeforeShoot;
-
             // 进行拍摄
             DoShoot();
         }
@@ -358,11 +357,8 @@ public class StepThreeCardAgent : CardBaseAgent
         {
             _doHandleLock = true;
 
-            //_messageBoxAgent.UpdateMessageTemp("正在处理照片!");
-
              StartCoroutine(DoHandlePhoto());
 
-            //DoHandlePhoto();
         }
     }
 
@@ -444,6 +440,8 @@ public class StepThreeCardAgent : CardBaseAgent
 
         _messageBoxAgent.UpdateMessage("连接实时取景失败！");
 
+        _OnErrorHappened.Invoke();
+
     }
     #endregion
 
@@ -475,6 +473,8 @@ public class StepThreeCardAgent : CardBaseAgent
 
         Debug.Log("拍摄失败 ： " + message);
         _shootFlowStatus = ShootFlowStatus.ShootCompleted;
+
+        _OnErrorHappened.Invoke();
     }
     #endregion
 
@@ -517,5 +517,10 @@ public class StepThreeCardAgent : CardBaseAgent
     public override void OnCloseKeepOpen(Action action)
     {
         _OnCloseKeepOpenAction = action;
+    }
+
+    public override void OnErrorHappend(Action action)
+    {
+        _OnErrorHappened = action;
     }
 }

@@ -25,10 +25,10 @@ public class CameraManager : MonoBehaviour
     Action _onBreakLiveShowAction;
     Action<byte[],Texture2D> _onFileAddAction;
     Action<string> _onFileAddErrorAction;
-    Action<string> _onCameraManagerError;
+    
     Action _onDisconnectLiveShowSuccessAction;
 
-    Action _onCameraErrAction;
+    Action<string> _onCameraManagerError;   // 相机管理器内部错误回调
 
 
     private bool _connectCamfiSuccess = false;  // Cam-fi 连接状态
@@ -61,20 +61,19 @@ public class CameraManager : MonoBehaviour
     ///     初始化相机状态
     /// </summary>
     public void Init(Action onConnectCamfi,Action onConnectCamfiFailed,
-        Action onConnectCamera,Action onConnectCameraFailed,Action onCameraErrAction) {
+        Action onConnectCamera,Action onConnectCameraFailed,Action<string> onCameraErrAction) {
         _onConnectCamfiAction = onConnectCamfi;
         _onBreakCamfiAction = onConnectCamfiFailed;
         _onConnectCameraAction = onConnectCamera;
         _onBreakCameraAction = onConnectCameraFailed;
-        _onCameraErrAction = onCameraErrAction;
+        _onCameraManagerError = onCameraErrAction;
 
         socketioManager = new SocketManager(new Uri(CamfiServerInfo.SockIOUrlStr));
         InitSocketIOManager();
 
-        GetCameraConfig();
-
         try
         {
+            GetCameraConfig();
             socketioManager.Open();
         }
         catch (Exception e)
@@ -255,15 +254,9 @@ public class CameraManager : MonoBehaviour
             _connectLiveShowSuccess = false;
         }
 
-
-        if (!_connectLiveShowSuccess)
-        {
-            _onBreakLiveShowAction.Invoke();
+        if (!_connectLiveShowSuccess) {
+            _onCameraManagerError.Invoke("_connect Live Show Error");
         }
-        else {
-            //_onConnectLiveShowAction.Invoke();
-        }
-
 
 
 
@@ -391,7 +384,7 @@ public class CameraManager : MonoBehaviour
         }
         catch (Exception ex) {
             Debug.LogError(ex.Message);
-            _onCameraErrAction.Invoke();
+            _onCameraManagerError.Invoke(ex.Message);
         }
     }
 

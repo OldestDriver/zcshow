@@ -122,14 +122,14 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
     public void PlaySecnarioOne() {
         //_videoPlayer1.frame = 0;
         _videoPlayer1.Play();
-        Debug.Log("Play Secnario One");
+        //Debug.Log("Play Secnario One");
     }
 
     public void StopSecnarioOne()
     {
         _videoPlayer1.Pause();
 
-        Debug.Log("Stop Secnario One");
+        //Debug.Log("Stop Secnario One");
     }
 
     public void PlaySecnarioTwo()
@@ -137,13 +137,13 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
         _image2.texture = _videoPlayer2.texture;
 
         _videoPlayer2.Play();
-        Debug.Log("Play Secnario Two");
+        //Debug.Log("Play Secnario Two");
     }
 
     public void StopSecnarioTwo()
     {
         _videoPlayer2.Pause();
-        Debug.Log("Stop Secnario Two");
+        //Debug.Log("Stop Secnario Two");
     }
 
     public void PlaySecnarioFive()
@@ -151,19 +151,17 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
         _image3.texture = _videoPlayer3.texture;
 
         _videoPlayer3.Play();
-        Debug.Log("Play Secnario Five");
+        //Debug.Log("Play Secnario Five");
     }
 
     public void StopSecnarioFive()
     {
         _videoPlayer3.Pause();
-        Debug.Log("Stop Secnario Five");
+        //Debug.Log("Stop Secnario Five");
     }
 
     public void OnAnimationEnd() {
-
-
-        Debug.Log("Stop OnAnimationEnd");
+        //Debug.Log("Stop OnAnimationEnd");
 
         _videoFactoryStatus = VideoFactoryStatus.Finish;
     }
@@ -176,10 +174,11 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
     /// <summary>
     ///     激活视频工厂
     /// </summary>
-    public void DoActive(Action<string> completeCallBack) {
+    public void DoActive(Action<string> completeCallBack,bool isMock) {
         //Reset();
 
         ResetForInit();
+        _isMock = isMock;
 
         _videoGenerateCompletedCallback = completeCallBack;
 
@@ -225,7 +224,7 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
         {
             // 开始动画
             //_animator.Play("Play");
-            DoActive(DoAfterCompleted);
+            DoActive(DoAfterCompleted,_isMock);
 
         }
 
@@ -245,9 +244,7 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
                 {
 
                     spriteA = Resources.Load<Sprite>("1");
-
-                    Debug.Log("spriteA width : " + spriteA.rect.width);
-
+                    //Debug.Log("spriteA width : " + spriteA.rect.width);
                      spriteB = Resources.Load<Sprite>("2");
                      spriteC = Resources.Load<Sprite>("3");
                 }
@@ -347,13 +344,12 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
                 if (_record && !_isRecorded)
                 {
                     //  结束录屏
-                    Debug.Log("结束录屏");
+                    //Debug.Log("结束录屏");
 
                     StopRecord();
 
                     _isRecorded = true;
-
-                    _videoGenerateCompletedCallback.Invoke(_videoAddress);
+                    //_videoGenerateCompletedCallback.Invoke(_videoAddress);
                 }
 
 
@@ -553,6 +549,8 @@ public class VideoFactoryNoLogoAgent : MonoBehaviour
 
         // 如果正在录制中
         if (!_isRecorded) {
+            Debug.Log("2号工厂正在录制，进行关闭！");
+
             _animator.StopRecording();
             Replay.StopRecording();
         }

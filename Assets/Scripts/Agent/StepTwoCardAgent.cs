@@ -16,6 +16,9 @@ public class StepTwoCardAgent : CardBaseAgent
     private Action _OnKeepOpenAction;
     private Action _OnCloseKeepOpenAction;
 
+    private Action _OnErrorHappened;
+
+
     void Reset()
     {
     }
@@ -90,6 +93,9 @@ public class StepTwoCardAgent : CardBaseAgent
         _OnCloseKeepOpenAction = action;
     }
 
-
+    public override void OnErrorHappend(Action action)
+    {
+        _OnErrorHappened = action;
+    }
 
 }

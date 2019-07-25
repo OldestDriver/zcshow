@@ -98,6 +98,7 @@ public class MainManager : MonoBehaviour
             card.OnUpdateHandleTime(OnUpdateHandleTime);
             card.OnKeepOpen(OnKeepOpen);
             card.OnCloseKeepOpen(OnCloseKeepOpen);
+            card.OnErrorHappend(OnInnerError);
         }
 
         card1.DoActive();
@@ -143,10 +144,10 @@ public class MainManager : MonoBehaviour
         }
         else if (!_camfiConnect)
         {
-            _messageBoxAgent.UpdateMessage("未连接 Camfi！");
+            //_messageBoxAgent.UpdateMessage("未连接 Camfi！");
         }
         else if (!_cameraConnect) {
-            _messageBoxAgent.UpdateMessage("未连接相机 ！");
+            //_messageBoxAgent.UpdateMessage("未连接相机 ！");
         }
 
 
@@ -206,9 +207,16 @@ public class MainManager : MonoBehaviour
 
 
 
-    private void OnCameraError()
+    private void OnCameraError(string message)
+    {
+        Debug.Log("内部发生了问题:" + message);
+    }
+
+    private void OnInnerError()
     {
         Debug.Log("内部发生了问题");
+        ReStart();
+
     }
 
 

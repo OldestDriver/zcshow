@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657844, g: 0.49641222, b: 0.57481694, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1000,7 +1000,7 @@ MonoBehaviour:
   _scenario4C: {fileID: 216350410}
   _agent: {fileID: 1242330731}
   _record: 1
-  _isMock: 0
+  _isMock: 1
 --- !u!95 &98471443
 Animator:
   serializedVersion: 3
@@ -1436,7 +1436,7 @@ MonoBehaviour:
   _loadingContentRect: {fileID: 333506749}
   _loadingRect: {fileID: 765315758}
   _resultRect: {fileID: 437217033}
-  _qrCodeRect: {fileID: 0}
+  _qrCodeRect: {fileID: 365269284}
   _qrCode: {fileID: 349952145}
   _videoFactoryAgent: {fileID: 98471441}
   _videoFactoryNoLogoAgent: {fileID: 1249193443}
@@ -1447,7 +1447,7 @@ MonoBehaviour:
   _inputEmailDisableColor: {r: 0.14150941, g: 0.14150941, b: 0.14150941, a: 1}
   _inputEmailImage: {fileID: 1931641714}
   _customKeyboard: {fileID: 639989072}
-  _isMock: 0
+  _isMock: 1
 --- !u!224 &173770707 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1351574337350920814, guid: e8dc44c3fb6b085408b494753fd455de,
@@ -6923,7 +6923,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 1.6e-43, w: 0.01171875}
+  m_BoundingSphereOverride: {x: 5.52e-43, y: -0.00026631728, z: 4.5905e-41, w: 0}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0

@@ -339,13 +339,12 @@ public class VideoFactoryAgent : MonoBehaviour
                 if (_record && !_isRecorded)
                 {
                     //  结束录屏
-                    Debug.Log("结束录屏");
 
                     StopRecord();
 
                     _isRecorded = true;
 
-                    _videoGenerateCompletedCallback.Invoke(_videoAddress);
+                    //_videoGenerateCompletedCallback.Invoke(_videoAddress);
                 }
 
 
