@@ -238,5 +238,10 @@ public class MainManager : MonoBehaviour
         _isKeepOpen = false;
     }
 
+    public void DoBackDoor() {
+
+        ReStart();
+    }
+
 
 }

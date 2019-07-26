@@ -10,6 +10,7 @@ public class StepFourCardAgent : CardBaseAgent
 {
 
     [SerializeField, Header("UI")] private RawImage _previewVideoPlayerHolder;//视频预览
+    [SerializeField] private RectTransform _previewRect;//视频预览
     [SerializeField] private RectTransform _retakeRect;
     [SerializeField] private RectTransform _confirmRect;
     [SerializeField] private RectTransform _loadingContentRect;
@@ -24,6 +25,7 @@ public class StepFourCardAgent : CardBaseAgent
 
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
     [SerializeField] private Texture _recordTexture;
+    [SerializeField] private Texture _defaultTexture;
     //[SerializeField, Header("Video Factory - No Logo")] private VideoFactoryAgent _videoFactoryNoLogoAgent;
     //[SerializeField] private Texture _recordTextureNoLogo;
 
@@ -53,7 +55,7 @@ public class StepFourCardAgent : CardBaseAgent
         _videoIsGenerateCompleted = false;
 
         // 预处理UI
-
+        _previewRect.gameObject.SetActive(false);
     }
 
     /// <summary>
@@ -61,6 +63,9 @@ public class StepFourCardAgent : CardBaseAgent
     /// </summary>
     public override void DoPrepare() {
         Reset();
+        _previewVideoPlayerHolder.texture = _defaultTexture;
+
+        //_recordTexture
 
         _OnKeepOpenAction.Invoke();
 
@@ -137,6 +142,10 @@ public class StepFourCardAgent : CardBaseAgent
     /// 结束阶段
     /// </summary>
     public override void DoEnd() {
+
+        _previewVideoPlayerHolder.texture = _defaultTexture;
+        _previewRect.gameObject.SetActive(false);
+
         gameObject.SetActive(false);
         Debug.Log("场景4结束");
         _NextCard.DoActive();
@@ -199,7 +208,8 @@ public class StepFourCardAgent : CardBaseAgent
     /// </summary>
     private void DoGenerateVideo() {
 
-        _videoFactoryAgent.DoActive(OnVideoGenerate);
+        _videoFactoryAgent.DoActive(OnVideoGenerate, OnRecordStart);
+        _previewVideoPlayerHolder.texture = _recordTexture;
 
     }
 
@@ -254,6 +264,11 @@ public class StepFourCardAgent : CardBaseAgent
         //StartRecord();
     }
 
+
+
+    private void OnRecordStart() {
+        _previewRect.gameObject.SetActive(true);
+    }
 
     public override void OnUpdateHandleTime(Action action)
     {

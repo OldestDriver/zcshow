@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Video;
@@ -15,7 +16,17 @@ public class VideoPlayResAgent : MonoBehaviour
     [SerializeField] VideoPlayer _videoPlayerDemoNoLogo;
     [SerializeField] MessageBoxAgent _messageBoxAgent;
 
+    Action _DoReprepareDefaultAction;
+    public void onDoReprepareDefaultAction(Action action) {
+        _DoReprepareDefaultAction = action;
+    }
 
+    [SerializeField, Header("Default Loop Time")] private int _defaultLoopTimeConst;
+    private int _defaultLoopTime;
+    private bool _lookDefault;
+
+
+    private bool _PrepareDefaultPlayerLock = false;
 
     public enum VideoPlayerType {
         videoPlayerDemo, videoPlayerDemoNoLogo, videoPlayerRecordFirst, videoPlayerRecordNoLogoFirst, videoPlayerSecond, videoPlayerThird
@@ -52,14 +63,13 @@ public class VideoPlayResAgent : MonoBehaviour
 			DoPreparedFirst(videoPlayerTypes[i]);
 		}
 
-
-        //StartCoroutine(LoadFirstVideo());
-        //StartCoroutine(LoadFirstNoLogoVideo());
-        //StartCoroutine(LoadSecondVideo());
-        //StartCoroutine(LoadThirdVideo());
-        //StartCoroutine(LoadDemoVideo());
-        //StartCoroutine(LoadDemoNoLogoVideo());
+        _defaultLoopTime = 0;
+        GetVideoPlayer(VideoPlayerType.videoPlayerDemo).loopPointReached += OnLoopReached;
     }
+
+
+
+
 
     // Update is called once per frame
     void Update()
@@ -115,6 +125,17 @@ public class VideoPlayResAgent : MonoBehaviour
 
             //_messageBoxAgent.UpdateMessageTemp("视频未准备完成");
         }
+
+
+
+        VideoPlayer videoPlayer = GetVideoPlayer(VideoPlayerType.videoPlayerDemo);
+        VideoPlayer videoPlayer2 = GetVideoPlayer(VideoPlayerType.videoPlayerDemoNoLogo);
+
+        if (videoPlayer.isPrepared && videoPlayer2.isPrepared) {
+            CheckRePrepareDefault();
+
+        }
+
     }
 
 
@@ -188,6 +209,12 @@ public class VideoPlayResAgent : MonoBehaviour
         if (!_prepareDefaultLock) {
             _prepareDefaultLock = true;
 
+            Debug.Log("PrepareDefaultPlayer");
+
+            _PrepareDefaultPlayerLock = true;
+
+            //_defaultPrepareSuccess = /*prepareSuccess*/;
+
             VideoPlayer videoPlayer = GetVideoPlayer(VideoPlayerType.videoPlayerDemo);
 
             if (!videoPlayer.isPrepared)
@@ -201,6 +228,8 @@ public class VideoPlayResAgent : MonoBehaviour
             {
                 DoPreparedFirst(VideoPlayerType.videoPlayerDemoNoLogo);
             }
+
+            CheckRePrepareDefault();
             _prepareDefaultLock = false;
         }
     }
@@ -279,6 +308,52 @@ public class VideoPlayResAgent : MonoBehaviour
             _videoPlayerDemoNoLogoIsPreparing = isPreparing;
         }
 
+
+    }
+
+
+
+    void OnLoopReached(VideoPlayer source)
+    {
+        Debug.Log("OnLoopReached : " + _defaultLoopTime);
+
+        if (!_lookDefault) {
+            _lookDefault = true;           
+
+            _defaultLoopTime++;
+
+            _lookDefault = false;
+
+            if (_defaultLoopTime > _defaultLoopTimeConst) {
+                _defaultLoopTime = 0;
+
+                StopPlayer(VideoPlayerType.videoPlayerDemo);
+                StopPlayer(VideoPlayerType.videoPlayerDemoNoLogo);
+                //PrepareDefaultPlayer();
+
+                PrepareDefaultPlayer();
+
+            }
+
+
+        }
+
+
+    }
+
+    public int GetDefaultLoopTime() {
+        return _defaultLoopTime;
+    }
+
+    public void ClearDefaultLoopTime()
+    {
+        _defaultLoopTime = 0;
+    }
+
+
+    void CheckRePrepareDefault() {
+
+        _DoReprepareDefaultAction.Invoke();
 
     }
 

@@ -68,6 +68,7 @@ public class VideoFactoryAgent : MonoBehaviour
     private VideoFactoryContentStatus _contentStatus = VideoFactoryContentStatus.Prepared;
 
     private Action<string> _videoGenerateCompletedCallback;
+    private Action _onRecordStart;
     private string _videoAddress;
 
 
@@ -127,14 +128,11 @@ public class VideoFactoryAgent : MonoBehaviour
     public void PlaySecnarioOne() {
         //_videoPlayer1.frame = 0;
         _videoPlayer1.Play();
-        Debug.Log("Play Secnario One");
     }
 
     public void StopSecnarioOne()
     {
         _videoPlayer1.Pause();
-
-        Debug.Log("Stop Secnario One");
     }
 
     public void PlaySecnarioTwo()
@@ -142,13 +140,11 @@ public class VideoFactoryAgent : MonoBehaviour
         _image2.texture = _videoPlayer2.texture;
 
         _videoPlayer2.Play();
-        Debug.Log("Play Secnario Two");
     }
 
     public void StopSecnarioTwo()
     {
         _videoPlayer2.Pause();
-        Debug.Log("Stop Secnario Two");
     }
 
     public void PlaySecnarioFive()
@@ -156,21 +152,17 @@ public class VideoFactoryAgent : MonoBehaviour
         _image3.texture = _videoPlayer3.texture;
 
         _videoPlayer3.Play();
-        Debug.Log("Play Secnario Five");
     }
 
     public void StopSecnarioFive()
     {
         _videoPlayer3.Pause();
-        Debug.Log("Stop Secnario Five");
     }
 
     public void OnAnimationEnd() {
         if (_isRecordMusic) {
             _audioSource.Stop();
         }
-
-        Debug.Log("Stop OnAnimationEnd");
 
         _videoFactoryStatus = VideoFactoryStatus.Finish;
     }
@@ -183,7 +175,7 @@ public class VideoFactoryAgent : MonoBehaviour
     /// <summary>
     ///     激活视频工厂
     /// </summary>
-    public void DoActive(Action<string> completeCallBack) {
+    public void DoActive(Action<string> completeCallBack,Action onRecordStart) {
         //Reset();
 
         ResetForInit();
@@ -192,6 +184,7 @@ public class VideoFactoryAgent : MonoBehaviour
 
 
         _videoGenerateCompletedCallback = completeCallBack;
+        _onRecordStart = onRecordStart;
 
         _videoFactoryStatus = VideoFactoryStatus.Prepare;
 
@@ -231,11 +224,13 @@ public class VideoFactoryAgent : MonoBehaviour
         //}
 
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.O))
         {
             // 开始动画
             //_animator.Play("Play");
-            DoActive(DoAfterCompleted);
+            Debug.Log("kaishi");
+
+            //DoActive(DoAfterCompleted);
 
         }
 
@@ -321,6 +316,7 @@ public class VideoFactoryAgent : MonoBehaviour
                 //  开始动画
                 //_animator.Update(0f);
                 _animator.Play("Play");
+                _onRecordStart.Invoke();
 
                 if (_isRecordMusic) {
                     _audioSource.Play();

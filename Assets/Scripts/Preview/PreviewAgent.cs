@@ -31,13 +31,23 @@ public class PreviewAgent : MonoBehaviour
     bool _playLock = false;
     bool _playLockNew = false;
     bool _stopNewVideoLock = false;
+    bool _onRepreparedDefault = false;
+
+    bool _onLoopLock = false;
 
     bool _showNew = false;  
     int _loop = 0;
 
+    // 因长期视频播放后，会出现先后问题，所以需要调整
+    private int _defaultLoopTime;
+
 
     private VideoPlayer _mainVideoPlayer;
     private VideoPlayer _subVideoPlayer;
+
+
+
+    private bool _defaultPlayerIsPreparing = false;
 
 
     private void Reset()
@@ -59,6 +69,7 @@ public class PreviewAgent : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        _videoPlayResAgent.onDoReprepareDefaultAction(onDoReprepareDefaultAction);
         //_mainNewVideoPlayer.loopPointReached += OnNewLoopReached;
     }
 
@@ -77,9 +88,21 @@ public class PreviewAgent : MonoBehaviour
     }
 
 
+
+
     // Update is called once per frame
     void Update()
     {
+        if (_isMock) {
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                string path = Application.streamingAssetsPath + "/test-result_1.mp4";
+                string newPath = Application.streamingAssetsPath + "/test-result-nologo.mp4";
+
+                UpdateVideo(path, newPath);
+            }
+        }
+
 
         if (!_showNew)
         {
@@ -98,7 +121,6 @@ public class PreviewAgent : MonoBehaviour
             Debug.Log("投屏数据缺失 ： p - " + (path == null) + "| pnl : " + (pathNoLogo == null));
         }
         else {
-            Debug.Log("正在进行投屏数据处理");
 
             ResetLock();
             _subNewIsParpared = false;
@@ -149,11 +171,17 @@ public class PreviewAgent : MonoBehaviour
 
 
     void PlayDefaultVideo() {
-        if (_videoPlayResAgent.IsPrepared()) {
+        // 当视频循环次数超过5次后，进行重置
+
+        if (_videoPlayResAgent.IsPrepared())
+        {
 
             if (!_playLock)
             {
                 _playLock = true;
+
+                // 翻转
+                GetComponent<RectTransform>().rotation = Quaternion.Euler(0.0f, 180f, 90f);
 
                 _mainVideoPlayer = _videoPlayResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemo);
                 _subVideoPlayer = _videoPlayResAgent.GetVideoPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemoNoLogo);
@@ -165,10 +193,19 @@ public class PreviewAgent : MonoBehaviour
                 _rightScreen.texture = _subVideoPlayer.texture;
                 _right2Screen.texture = _subVideoPlayer.texture;
 
+            }
+
+            if (!_mainVideoPlayer.isPlaying) {
                 _mainVideoPlayer.Play();
                 _subVideoPlayer.Play();
-
             }
+
+        }
+        else {
+
+            Debug.Log("_videoPlayResAgent  is not prepared: ");
+
+            _playLock = false;
         }
     }
 
@@ -178,6 +215,9 @@ public class PreviewAgent : MonoBehaviour
             if (!_playLockNew)
             {
                 _playLockNew = true;
+
+                GetComponent<RectTransform>().rotation = Quaternion.Euler(0f, 0.0f, 90f);
+
 
                 _videoPlayResAgent.StopPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemo);
                 _videoPlayResAgent.StopPlayer(VideoPlayResAgent.VideoPlayerType.videoPlayerDemoNoLogo);
@@ -192,6 +232,7 @@ public class PreviewAgent : MonoBehaviour
                 _mainNewVideoPlayer.Play();
 
                 // 提前让原Video Player 准备
+                _defaultPlayerIsPreparing = false;
                 _videoPlayResAgent.PrepareDefaultPlayer();
 
                 _playLockNew = false;
@@ -212,5 +253,22 @@ public class PreviewAgent : MonoBehaviour
         return videoPlayer;
     }
 
+
+    void PrepareDefaultSuccess() {
+        _defaultLoopTime = 0;
+        _defaultPlayerIsPreparing = true;
+        _playLock = false;
+    }
+
+
+    private void onDoReprepareDefaultAction() {
+        _onRepreparedDefault = true;
+        if (!_showNew) {
+            _playLock = false;
+
+            PlayDefaultVideo();
+        }
+
+    }
 
 }
