@@ -6,7 +6,7 @@ using UnityEngine.Video;
 
 public class PreviewAgent : MonoBehaviour
 {
-    [SerializeField] RawImage _leftScreen;
+    [SerializeField,Header("Screen")] RawImage _leftScreen;
     [SerializeField] RawImage _left2Screen;
     [SerializeField] RawImage _rightScreen;
     [SerializeField] RawImage _right2Screen;
@@ -38,8 +38,6 @@ public class PreviewAgent : MonoBehaviour
     bool _showNew = false;  
     int _loop = 0;
 
-    // 因长期视频播放后，会出现先后问题，所以需要调整
-    private int _defaultLoopTime;
 
 
     private VideoPlayer _mainVideoPlayer;
@@ -255,7 +253,7 @@ public class PreviewAgent : MonoBehaviour
 
 
     void PrepareDefaultSuccess() {
-        _defaultLoopTime = 0;
+        //_defaultLoopTime = 0;
         _defaultPlayerIsPreparing = true;
         _playLock = false;
     }
