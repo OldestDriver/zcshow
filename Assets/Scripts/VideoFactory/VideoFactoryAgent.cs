@@ -224,13 +224,13 @@ public class VideoFactoryAgent : MonoBehaviour
         //}
 
 
-        if (Input.GetKeyDown(KeyCode.O))
+        if (Input.GetKeyDown(KeyCode.S))
         {
             // 开始动画
             //_animator.Play("Play");
             Debug.Log("kaishi");
 
-            //DoActive(DoAfterCompleted);
+            DoActive(DoAfterCompleted,()=> { });
 
         }
 

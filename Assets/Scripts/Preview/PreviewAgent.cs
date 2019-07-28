@@ -203,7 +203,7 @@ public class PreviewAgent : MonoBehaviour
         }
         else {
 
-            Debug.Log("_videoPlayResAgent  is not prepared: ");
+            //Debug.Log("_videoPlayResAgent  is not prepared: ");
 
             _playLock = false;
         }

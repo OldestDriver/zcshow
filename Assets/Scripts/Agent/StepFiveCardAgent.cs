@@ -55,6 +55,7 @@ public class StepFiveCardAgent : CardBaseAgent
         _showResultLock = false;
         _sendingEmail = false;
         _messageIdPrepared = false;
+        _customKeyboard.ClearAll();
         _customKeyboard.Hide();
 
         _resultRect.gameObject.SetActive(true);
@@ -255,6 +256,10 @@ public class StepFiveCardAgent : CardBaseAgent
     public void OnMessageIdReceived()
     {
         _messageIdPrepared = true;
+
+        Debug.Log("Do Color");
+
+        _inputEmailImage.DOColor(_inputEmailActiveColor, 0.5f);
     }
 
     public void OnQRCodeReceived(Texture2D texture2D)
@@ -262,6 +267,8 @@ public class StepFiveCardAgent : CardBaseAgent
         // Todo 
         _qrCode.texture = texture2D;
         _erCodeIsGenerated = true;
+        _inputEmailImage.DOColor(_inputEmailActiveColor, 0.5f);
+
 
     }
 

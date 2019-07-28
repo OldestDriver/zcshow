@@ -9,7 +9,9 @@ public class StepThreeCardAgent : CardBaseAgent
 {
 
     //第三步
-    [SerializeField, Header("UI")] private Text _countdownText;
+    [SerializeField, Header("UI - Count Down")] private Text _countdownText;
+    [SerializeField] private RectTransform _countdown;
+    [SerializeField] private RectTransform _countdownReady;
     [SerializeField] private Text _titleText;//标题
 
     [SerializeField, Header("Preview")] private RawImage _liveViewContent;//照片
@@ -30,8 +32,10 @@ public class StepThreeCardAgent : CardBaseAgent
     [SerializeField] private RectTransform photoMask2;
     [SerializeField] private RectTransform photoMask3;
 
-    [SerializeField,Header("倒计时时间")] int _CountDownNumCost = 3;//倒计时数字常量
-    [SerializeField,Header("拍摄的数量")] int _totalPictureConst = 7;//倒计时数字常量
+    [SerializeField,Header("倒计时时间")] int _CountDownNumCost = 4;//倒计时数字常量
+    [SerializeField,Header("拍摄的数量")] int _totalPictureConst = 3;//倒计时数字常量
+
+    [SerializeField, Header("Mock")] bool _isMock;
 
     private int _countDownNum;//倒计时数字
 
@@ -129,6 +133,12 @@ public class StepThreeCardAgent : CardBaseAgent
         gameObject.SetActive(true);
 
         _previewRect.gameObject.SetActive(false);
+
+
+        if (_isMock) {
+            _connectLiveShowSuccess = true;
+            _liveViewContent.color = Color.black;
+        }
 
         CompletePrepare();
     }
@@ -285,15 +295,28 @@ public class StepThreeCardAgent : CardBaseAgent
     private void DoCountDown() {
         // 设置文字
 
-        _titleText.text = "准备拍摄第" + (_totalPicture + 1) + "张照片";
+        //_titleText.text = "准备拍摄第" + (_totalPicture + 1) + "张照片";
 
         _previewPhoto.gameObject.SetActive(false);
 
-        if (_countDownNum > 0)
+        if (_countDownNum > 1)
+        //if (_countDownNum == 1)
         {
             UpdatePhotoMask();
-            _countdownText.text = _countDownNum.ToString();
+            _countdown.gameObject.SetActive(true);
+            _countdownReady.gameObject.SetActive(false);
+
+            _countdownText.text = (_countDownNum - 1).ToString();
             StartCoroutine(WaitForOneSecond());
+        }
+        else if (_countDownNum == 1)
+        {
+            //} else if (_countDownNum > 50) {
+            UpdatePhotoMask();
+            _countdown.gameObject.SetActive(false);
+            _countdownReady.gameObject.SetActive(true);
+
+            StartCoroutine(WaitForTwoSecond());
         }
         else {
             _shootFlowStatus = ShootFlowStatus.CountDownCompleted;
@@ -304,6 +327,13 @@ public class StepThreeCardAgent : CardBaseAgent
 
     IEnumerator WaitForOneSecond() {
         yield return new WaitForSeconds(1);
+        _countDownNum--;
+        DoCountDown();
+    }
+
+    IEnumerator WaitForTwoSecond()
+    {
+        yield return new WaitForSeconds(2);
         _countDownNum--;
         DoCountDown();
     }
@@ -343,8 +373,15 @@ public class StepThreeCardAgent : CardBaseAgent
 
         _messageBoxAgent.UpdateMessageTemp("拍摄中!");
 
-        _cameraManager.Shoot(OnShootSuccess, OnShootError);
-
+        if (_isMock)
+        {
+            _doShootLock = false;
+            _totalPicture++;
+            _shootFlowStatus = ShootFlowStatus.ShootCompleted;
+        }
+        else {
+            _cameraManager.Shoot(OnShootSuccess, OnShootError);
+        }
 
     }
 

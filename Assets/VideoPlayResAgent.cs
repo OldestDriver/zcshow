@@ -21,6 +21,13 @@ public class VideoPlayResAgent : MonoBehaviour
         _DoReprepareDefaultAction = action;
     }
 
+    Action _DoStopDefaultAction;
+    public void onDoStopDefaultAction(Action action)
+    {
+        _DoStopDefaultAction = action;
+    }
+
+
     [SerializeField, Header("Default Loop Time")] private int _defaultLoopTimeConst;
     private int _defaultLoopTime;
     private bool _lookDefault;
@@ -209,7 +216,7 @@ public class VideoPlayResAgent : MonoBehaviour
         if (!_prepareDefaultLock) {
             _prepareDefaultLock = true;
 
-            Debug.Log("PrepareDefaultPlayer");
+            //Debug.Log("PrepareDefaultPlayer");
 
             _PrepareDefaultPlayerLock = true;
 
@@ -315,17 +322,19 @@ public class VideoPlayResAgent : MonoBehaviour
 
     void OnLoopReached(VideoPlayer source)
     {
-        Debug.Log("OnLoopReached : " + _defaultLoopTime);
+        //Debug.Log("OnLoopReached : " + _defaultLoopTime);
 
         if (!_lookDefault) {
             _lookDefault = true;           
 
             _defaultLoopTime++;
-
+             
             _lookDefault = false;
 
             if (_defaultLoopTime > _defaultLoopTimeConst) {
                 _defaultLoopTime = 0;
+
+                //_DoStopDefaultAction.Invoke();
 
                 StopPlayer(VideoPlayerType.videoPlayerDemo);
                 StopPlayer(VideoPlayerType.videoPlayerDemoNoLogo);
