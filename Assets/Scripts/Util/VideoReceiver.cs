@@ -55,8 +55,19 @@ public class VideoReceiver
     /// 开始接收
     /// </summary>
     public void Receive() {
-        mediaSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        mediaSocket.BeginConnect(IPAddress.Parse("192.168.9.67"), 890, new AsyncCallback(ConnectCallBack), mediaSocket);
+        try
+        {
+            mediaSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            mediaSocket.BeginConnect(IPAddress.Parse("192.168.9.67"), 890, new AsyncCallback(ConnectCallBack), mediaSocket);
+        }
+        catch (Exception ex) {
+            Debug.Log(ex.Message);
+
+            
+
+        }
+
+
     }
 
     /// <summary>

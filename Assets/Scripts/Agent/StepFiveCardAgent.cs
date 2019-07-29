@@ -17,12 +17,12 @@ public class StepFiveCardAgent : CardBaseAgent
     [SerializeField] private RectTransform _loadingContentRect;
     [SerializeField] private RectTransform _loadingRect;
     [SerializeField] private RectTransform _resultRect;
-    [SerializeField] private RawImage _qrCode;
-
-    [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
-    [SerializeField, Header("Video Factory - No Logo")] private VideoFactoryAgent _videoFactoryNoLogoAgent;
-
+	[SerializeField , Header("QR CODE")] RectTransform _qrCodeRect;
+	[SerializeField] private RawImage _qrCode;
+	[SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
+    [SerializeField, Header("Video Factory - No Logo")] private VideoFactoryNoLogoAgent _videoFactoryNoLogoAgent;
     [SerializeField, Header("Preview")] private PreviewAgent _previewAgent;
+	
 
     [SerializeField, Header("Card Index")] protected CardBaseAgent _HomeCard;
     [SerializeField, Header("Email")] Text _inputEmailText;
@@ -31,10 +31,7 @@ public class StepFiveCardAgent : CardBaseAgent
     [SerializeField] Image _inputEmailImage;
 
     [SerializeField, Header("Keyboard")] protected CustomKeyboard _customKeyboard;
-
-
     [SerializeField, Header("Mock")] protected bool _isMock;
-
 
 
     private bool _erCodeIsGenerated = false;
@@ -42,14 +39,15 @@ public class StepFiveCardAgent : CardBaseAgent
     private bool _showResultLock = false;
     private bool _sendingEmail = false;
 
-    //公共参数
-    private int APP_ID = 99;
-    private string api = "https://api.pixelplus.cc";
-    private string qiniu_api = "https://upload.qiniu.com";
-    private string h5_api = "https://h5.pixelplus.cc";
-    private int EVENT_ID = 49;
 
-    private int message_id;
+    private NotionApiClient notionApiClient;
+
+
+    //  挂载的使用操作信息
+    private Action _OnUpdateHandleTimeAction;
+    private Action _OnKeepOpenAction;
+    private Action _OnCloseKeepOpenAction;
+    private Action _OnErrorHappened;
 
     private void Reset()
     {
@@ -57,10 +55,13 @@ public class StepFiveCardAgent : CardBaseAgent
         _showResultLock = false;
         _sendingEmail = false;
         _messageIdPrepared = false;
+        _customKeyboard.ClearAll();
+        _customKeyboard.Hide();
 
         _resultRect.gameObject.SetActive(true);
+
         //_loadingRect.gameObject.SetActive(true);
-        
+
     }
 
     /// <summary>
@@ -69,13 +70,16 @@ public class StepFiveCardAgent : CardBaseAgent
     public override void DoPrepare() {
         Reset();
 
+        _OnKeepOpenAction.Invoke();
+
         _inputEmailImage.color = _inputEmailDisableColor;
+        gameObject.SetActive(true);
 
+        _qrCodeRect.gameObject.SetActive(false);
 
-        // 获取小程序码
-        GetErCode();
+		// 获取小程序码
+		GetErCode();
         //_erCodeIsGenerated = true;
-
 
         CompletePrepare();
 
@@ -111,6 +115,8 @@ public class StepFiveCardAgent : CardBaseAgent
 
     public override void DoRunOut()
     {
+        Debug.Log("场景 5 DoRunOut");
+
         CompleteRunOut();
     }
 
@@ -119,8 +125,13 @@ public class StepFiveCardAgent : CardBaseAgent
     /// 结束阶段
     /// </summary>
     public override void DoEnd() {
+        Debug.Log("场景 5 结束");
+        _NextCard?.DoActive();
+
+        _qrCodeRect.gameObject.SetActive(false);
         gameObject.SetActive(false);
-        Debug.Log("场景4结束");
+
+        CompleteDoEnd();
     }
 
 
@@ -133,25 +144,20 @@ public class StepFiveCardAgent : CardBaseAgent
 
     private void ShowResult()
     {
-        //_resultRect.gameObject.SetActive(true);
-        //_loadingRect.gameObject.SetActive(false);
-        emailInput.ActivateInputField();
+        _OnCloseKeepOpenAction.Invoke();
+		_qrCodeRect.gameObject.SetActive(true);
+		emailInput.ActivateInputField();
     }
 
     //开始输入邮件
     public void StartInputEmail()
     {
+        _OnUpdateHandleTimeAction.Invoke();
+
         if (_messageIdPrepared) {
             emailInput.ActivateInputField();
             FindObjectOfType<CustomKeyboard>().Show();
         }
-    }
-
-
-    //流程出错
-    void Error()
-    {
-        Debug.Log("流程内出错了！！！");
     }
 
 
@@ -160,215 +166,49 @@ public class StepFiveCardAgent : CardBaseAgent
     /// </summary>
     private void GetErCode() {
 
-        _videoFactoryNoLogoAgent.DoActive(OnVideoNoLogoGenerate, false, false);
+        _videoFactoryNoLogoAgent.DoActive(OnVideoNoLogoGenerate,_isMock);
 
         // 上传视频功能
         //获取token
-        GetToken();
+        //GetToken();
+        notionApiClient = new NotionApiClient(_isMock, OnApiError, OnMessageIdReceived, OnQRCodeReceived);
+        notionApiClient.GetQrCodeIcon(_videoFactoryAgent.GetVideoAddress());
 
     }
 
-    void GetToken()
-    {
-        HTTPRequest request = new HTTPRequest(new Uri(api + "/api/storage/qiniu/token"), HTTPMethods.Post, GetTokenRequestFinished);
-        request.AddField("strategy", "default");
-        request.AddField("app", "1");
-        request.Send();
-    }
-
-    void GetTokenRequestFinished(HTTPRequest request, HTTPResponse response)
-    {
-        JsonData data = JsonMapper.ToObject(response.DataAsText);
-        if ((bool)data["status"])
-        {
-            //获取token请求成功
-            string token = (string)data["data"]["token"];
-            //上传视频
-            UploadVideo(token);
-        }
-        else
-        {
-            Debug.Log("请求token失败" + data["message"]);
-            Error();
-        }
-    }
-
-    void UploadVideo(string token)
-    {
-
-        HTTPRequest request = new HTTPRequest(new Uri(qiniu_api), HTTPMethods.Post, UploadVideoRequestFinished);
-
-        if (_isMock)
-        {
-            request.AddBinaryData("file", GetVideoData(Application.dataPath + "/Out/1.mp4"));
-        }
-        else {
-            request.AddBinaryData("file", GetVideoData(_videoFactoryAgent.GetVideoAddress()), "Video.mp4");
-        }
-
-        request.AddHeader("Accept", "application/json");
-        request.AddField("token", token);
-        request.Send();
-    }
-
-    byte[] GetVideoData(string path)
-    {
-        FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-        byte[] data = new byte[fs.Length];
-        fs.Read(data, 0, data.Length);
-        fs.Close();
-        return data;
-    }
-
-    void UploadVideoRequestFinished(HTTPRequest request, HTTPResponse response)
-    {
-        JsonData data = JsonMapper.ToObject(response.DataAsText);
-        if ((bool)data["status"])
-        {
-            //上传视频成功
-            string videoUrl = (string)data["data"]["url"];
-            UploadUrl(videoUrl);
-            //Debug.Log("上传视频成功:" + videoUrl);
-        }
-        else
-        {
-            Debug.Log("上传视频失败" + data["message"]);
-            Error();
-        }
-    }
-
-    void UploadUrl(string url)
-    {
-        HTTPRequest request = new HTTPRequest(new Uri(api+"/api/attachments"), HTTPMethods.Post, UploadUrlRequestFinished);
-        request.AddField("app_id", APP_ID.ToString());
-        request.AddField("file_url", url);
-        request.Send();
-    }
-
-    void UploadUrlRequestFinished(HTTPRequest request, HTTPResponse response)
-    {
-        JsonData data = JsonMapper.ToObject(response.DataAsText);
-        if ((bool)data["status"])
-        {
-            //上传文件路径成功
-            //Debug.Log(response.DataAsText);
-            message_id = (int)data["data"]["options"]["mail"]["message"];
-            string code = (string)data["data"]["code"];
-            //Debug.Log("message_id：" + message_id);
-
-            _messageIdPrepared = true;
-            _inputEmailImage.DOColor(_inputEmailActiveColor, 0.5f);
-
-
-
-            GetQRCode(code);
-        }
-        else
-        {
-            _messageIdPrepared = false;
-            Debug.Log("上传文件路径失败" + data["message"]);
-            Error();
-        }
-    }
-
-    void GetQRCode(string code)
-    {
-        HTTPRequest request = new HTTPRequest(new Uri(h5_api + "/api/wxapp/getFileQrcode/" + code + "?type=beta_2"), HTTPMethods.Get, GetQRCodeRequestFinished);
-        //request.AddField("type", "beta_2");
-        //request.AddField("code", code);
-        request.Send();
-    }
-
-    void GetQRCodeRequestFinished(HTTPRequest request, HTTPResponse response)
-    {
-        if (response.StatusCode == 200)
-        {
-            _qrCode.texture = response.DataAsTexture2D;
-            _erCodeIsGenerated = true;
-        }   else
-        {
-            Debug.Log(response.DataAsText);
-            Error();
-        }
-    }
 
     private void DoSendEmail() {
 
         _sendingEmail = true;
-        Debug.Log("发送邮件！！！");
-        //return;
         SendEmail();
     }
 
 
     void SendEmail()
     {
-        HTTPRequest request = new HTTPRequest(new Uri(api + "/api/mail/messages/" + message_id + "/send"), HTTPMethods.Post, SendEmainRequestFinished);
+        Debug.Log("发送邮件！！！");
 
-
-        request.AddHeader("Content-Type", "application/json");
-        request.AddHeader("Accept", "application/json");
-
-
-        // 设置地址
+        _OnKeepOpenAction.Invoke();
 
         string address = _inputEmailText.text;
-
-        if (CheckEmailStr())
-        {
-            var fromJson = @"
-            {
-                ""to""     : [{""email"" : """ +
-                    address
-                    + @"""}]}";
-
-            request.RawData = Encoding.UTF8.GetBytes(fromJson);
-            request.Send();
-
-            
-        }
-        else {
-            _messageBoxAgent.UpdateMessageTemp("Email is valid.");
-        }
-
-        //string address = "873074332@qq.com";
+        notionApiClient.SendEmail(address, OnSendEmailSuccess,OnSendEmailError);
 
     }
 
-    void SendEmainRequestFinished(HTTPRequest request, HTTPResponse response)
-    {
-        JsonData data = JsonMapper.ToObject(response.DataAsText);
-        if ((bool)data["status"])
-        {
-            //发送邮件成功
-            Debug.Log("发送邮件成功");
-            _messageBoxAgent.UpdateMessageTemp("邮件发送成功!");
-
-            _customKeyboard.Hide();
-            _customKeyboard.ClearAll();
-        }
-        else
-        {
-            Debug.Log("发送邮件失败" + data["message"]);
-            Error();
-        }
-
-
-        _inputEmailText.text = "";
-    }
 
     /// <summary>
     ///     点击返回首页
     /// </summary>
     public void DoReturnHome() {
+        _OnUpdateHandleTimeAction.Invoke();
 
         //  清理保存的数据
         _videoFactoryAgent.Clear();
+        _videoFactoryNoLogoAgent.StopPlayVideoAndClear();
 
-        nextCard = _HomeCard;
+        _NextCard = _HomeCard;
 
         DoRunOut();
-
     }
 
 
@@ -377,31 +217,97 @@ public class StepFiveCardAgent : CardBaseAgent
     ///     点击空白
     /// </summary>
     public void DoClickEmpty() {
+        _OnUpdateHandleTimeAction.Invoke();
+
         Debug.Log("Do Click Empty");
         _customKeyboard.Hide();
+
     }
 
 
-    private bool CheckEmailStr() {
-        string address = _inputEmailText.text;
-        if (address.Length == 0)
-            return false;
-        if (address.IndexOf("@") == -1) {
-            return false;
-        }
-        return true;
-    }
+
 
     void OnVideoNoLogoGenerate(string videoUrl)
     {
         Debug.Log("Video 生成完成 ： " + videoUrl);
 
-        //_previewVideoPlayer.url = videoUrl;
-
-        //_videoIsGenerateCompleted = true;
-
         // 投屏
-        _previewAgent.UpdateVideo(_videoFactoryAgent.GetVideoAddress(), _videoFactoryNoLogoAgent.GetVideoAddress()) ;
+        if (_isMock)
+        {
+            string path = Application.streamingAssetsPath + "/test-result_1.mp4";
+
+            _previewAgent.UpdateVideo(path, _videoFactoryNoLogoAgent.GetVideoAddress());
+        }
+        else {
+            _previewAgent.UpdateVideo(_videoFactoryAgent.GetVideoAddress(), _videoFactoryNoLogoAgent.GetVideoAddress());
+        }
+
+        
     }
 
+
+
+    //public NotionApiClient(bool isMock, Action<string> onApiError, Action onMessageIdReceived, Action<Texture2D> onQRCodeReceived)
+    public void OnApiError(string message) {
+        // api error
+        _OnErrorHappened.Invoke();
+    }
+
+    public void OnMessageIdReceived()
+    {
+        _messageIdPrepared = true;
+
+        Debug.Log("Do Color");
+
+        _inputEmailImage.DOColor(_inputEmailActiveColor, 0.5f);
+    }
+
+    public void OnQRCodeReceived(Texture2D texture2D)
+    {
+        // Todo 
+        _qrCode.texture = texture2D;
+        _erCodeIsGenerated = true;
+        _inputEmailImage.DOColor(_inputEmailActiveColor, 0.5f);
+
+
+    }
+
+    public void OnSendEmailSuccess()
+    {
+        _messageBoxAgent.UpdateMessageTemp("邮件发送成功!");
+
+        _customKeyboard.Hide();
+        _customKeyboard.ClearAll();
+    }
+
+    public void OnSendEmailError(string message)
+    {
+        _messageBoxAgent.UpdateMessageTemp(message);
+    }
+
+
+
+
+
+
+
+    public override void OnUpdateHandleTime(Action action)
+    {
+        _OnUpdateHandleTimeAction = action;
+    }
+
+    public override void OnKeepOpen(Action action)
+    {
+        _OnKeepOpenAction = action;
+    }
+
+    public override void OnCloseKeepOpen(Action action)
+    {
+        _OnCloseKeepOpenAction = action;
+    }
+
+    public override void OnErrorHappend(Action action)
+    {
+        _OnErrorHappened = action;
+    }
 }

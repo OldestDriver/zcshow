@@ -25,7 +25,11 @@ public class CameraManager : MonoBehaviour
     Action _onBreakLiveShowAction;
     Action<byte[],Texture2D> _onFileAddAction;
     Action<string> _onFileAddErrorAction;
-    Action<string> _onCameraManagerError;
+    
+    Action _onDisconnectLiveShowSuccessAction;
+
+    Action<string> _onCameraManagerError;   // 相机管理器内部错误回调
+
 
     private bool _connectCamfiSuccess = false;  // Cam-fi 连接状态
     private bool _connectCameraSuccess = false; //  相机 连接状态
@@ -37,6 +41,8 @@ public class CameraManager : MonoBehaviour
     private bool _showLive = false;
     private bool _hasReceiveFrame = false;
     private bool _hasReceiveFrameLock = false;
+
+    private byte[] _currentBytes;
 
 
     #region 【公开】 初始化相机状态
@@ -55,19 +61,19 @@ public class CameraManager : MonoBehaviour
     ///     初始化相机状态
     /// </summary>
     public void Init(Action onConnectCamfi,Action onConnectCamfiFailed,
-        Action onConnectCamera,Action onConnectCameraFailed) {
+        Action onConnectCamera,Action onConnectCameraFailed,Action<string> onCameraErrAction) {
         _onConnectCamfiAction = onConnectCamfi;
         _onBreakCamfiAction = onConnectCamfiFailed;
         _onConnectCameraAction = onConnectCamera;
         _onBreakCameraAction = onConnectCameraFailed;
+        _onCameraManagerError = onCameraErrAction;
 
         socketioManager = new SocketManager(new Uri(CamfiServerInfo.SockIOUrlStr));
         InitSocketIOManager();
 
-        GetCameraConfig();
-
         try
         {
+            GetCameraConfig();
             socketioManager.Open();
         }
         catch (Exception e)
@@ -125,11 +131,13 @@ public class CameraManager : MonoBehaviour
     /// <summary>
     ///     断开实时取景
     /// </summary>
-    public void DisconnectLiveShow()
+    public void DisconnectLiveShow(Action onSuccessAction)
     {
+        _onDisconnectLiveShowSuccessAction = onSuccessAction;
+
         _videoReceiver.Close();
 
-        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StopLiveShowUrlStr), HTTPMethods.Get, onRequestCallback);
+        HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.StopLiveShowUrlStr), HTTPMethods.Get, OnDisconnectLiveShowRequestCallback);
         request.Send();
     }
 
@@ -186,6 +194,13 @@ public class CameraManager : MonoBehaviour
 
 
 
+    public byte[] GetLastScreen() {
+        return _currentBytes;
+    }
+
+
+
+
 
     /// <summary>
     ///     初始化实时取景
@@ -217,6 +232,8 @@ public class CameraManager : MonoBehaviour
         {
             if (response.StatusCode == 200)
             {
+                Debug.Log("连接实时取景成功 : ");
+
                 if (_videoReceiver == null) {
                     _videoReceiver = new VideoReceiver(onVideoFramePrepared);
                 }
@@ -237,15 +254,9 @@ public class CameraManager : MonoBehaviour
             _connectLiveShowSuccess = false;
         }
 
-
-        if (!_connectLiveShowSuccess)
-        {
-            _onBreakLiveShowAction.Invoke();
+        if (!_connectLiveShowSuccess) {
+            _onCameraManagerError.Invoke("_connect Live Show Error");
         }
-        else {
-            //_onConnectLiveShowAction.Invoke();
-        }
-
 
 
 
@@ -271,6 +282,9 @@ public class CameraManager : MonoBehaviour
         if (!_currentFrameLock)
         {
             _currentFrameLock = true;
+
+            _currentBytes = content;
+
             if (_showLive) {
                 ScreenFactoryInvoker.AddCommand(new VideoDecodeTask(content, _liveScreen));
             }
@@ -332,7 +346,7 @@ public class CameraManager : MonoBehaviour
     void OnFileAdded(BestHTTP.SocketIO.Socket socket, Packet packet, params object[] args)
     {
         string pathInCamfi = args[0].ToString();
-        Debug.Log("拍照成功，其Url: " + pathInCamfi);
+        //Debug.Log("拍照成功，其Url: " + pathInCamfi);
         HTTPRequest request = new HTTPRequest(new Uri(CamfiServerInfo.CamFiGetRawDataByEnCodeUrlStr(UrlEncode(pathInCamfi))), HTTPMethods.Get, GetRawDataFinished);
         request.Send();
 
@@ -353,16 +367,24 @@ public class CameraManager : MonoBehaviour
     /// <param name="response"></param>
     void GetRawDataFinished(HTTPRequest request, HTTPResponse response)
     {
-        if (response.StatusCode == 200) { 
-
-            //获取照片成功
-            Debug.Log("获取照片成功");
-            _onFileAddAction.Invoke(response.Data, response.DataAsTexture2D);
-        }
-        else
+        try
         {
-            Debug.Log("获取照片失败：" + response.StatusCode + response.Data);
-            _onFileAddErrorAction.Invoke(response.DataAsText);
+            if (response.StatusCode == 200)
+            {
+
+                //获取照片成功
+                Debug.Log("获取照片成功");
+                _onFileAddAction.Invoke(response.Data, response.DataAsTexture2D);
+            }
+            else
+            {
+                Debug.Log("获取照片失败：" + response.StatusCode + response.Data);
+                _onFileAddErrorAction.Invoke(response.DataAsText);
+            }
+        }
+        catch (Exception ex) {
+            Debug.LogError(ex.Message);
+            _onCameraManagerError.Invoke(ex.Message);
         }
     }
 
@@ -424,6 +446,16 @@ public class CameraManager : MonoBehaviour
     }
 
 
+    void OnDisconnectLiveShowRequestCallback(HTTPRequest request, HTTPResponse response)
+    {
+        if (RequestIsSuccess(request, response))
+        {
+            _onDisconnectLiveShowSuccessAction.Invoke();
+        }
+        else {
+
+        }
+    }
 
 
     void onRequestCallback(HTTPRequest request, HTTPResponse response)

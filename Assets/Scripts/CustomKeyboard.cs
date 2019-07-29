@@ -17,6 +17,15 @@ public class CustomKeyboard : MonoBehaviour
     private bool isShow = false;
 
 
+    /// <summary>
+    ///  上一次操作的事件
+    /// </summary>
+    private float _lastInputTime = 0f;
+
+
+    [SerializeField,Header("输入周期")] float _inputInterval = 0.5f;
+
+
     private Action _onClickEnter;
 
     public void OnClickEnter(Action onClickEnter) {
@@ -27,8 +36,13 @@ public class CustomKeyboard : MonoBehaviour
 
     public void AlphaClick(string alpha)
     {
-        word = word  + alpha;
-        SetInputFieldText();
+        if ((Time.time - _lastInputTime) > _inputInterval) {
+            word = word + alpha;
+            SetInputFieldText();
+            _lastInputTime = Time.time;
+        }
+
+
     }
 
     void SetInputFieldText()

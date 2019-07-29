@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -120,4 +121,29 @@ public class CardBaseAgent : MonoBehaviour
         }
 
     }
+
+
+    public virtual void OnUpdateHandleTime(Action action)
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+
+    public virtual void OnKeepOpen(Action action)
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+    public virtual void OnCloseKeepOpen(Action action)
+    {
+        Debug.Log("CardBaseAgent is runing!");
+    }
+
+    /// <summary>
+    ///     当异常发生时
+    /// </summary>
+    /// <param name="action"></param>
+    public virtual void OnErrorHappend(Action action)
+    {
+        Debug.Log("OnErrorHappend is runing!");
+    }
+
 }

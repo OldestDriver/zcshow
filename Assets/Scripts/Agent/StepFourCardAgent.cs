@@ -4,12 +4,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using UnityEngine.Video;
+using System;
 
 public class StepFourCardAgent : CardBaseAgent
 {
 
     [SerializeField, Header("UI")] private RawImage _previewVideoPlayerHolder;//视频预览
-    [SerializeField] private VideoPlayer _previewVideoPlayer;
+    [SerializeField] private RectTransform _previewRect;//视频预览
     [SerializeField] private RectTransform _retakeRect;
     [SerializeField] private RectTransform _confirmRect;
     [SerializeField] private RectTransform _loadingContentRect;
@@ -24,15 +25,28 @@ public class StepFourCardAgent : CardBaseAgent
 
     [SerializeField, Header("Video Factory")] private VideoFactoryAgent _videoFactoryAgent;
     [SerializeField] private Texture _recordTexture;
+    [SerializeField] private Texture _defaultTexture;
     //[SerializeField, Header("Video Factory - No Logo")] private VideoFactoryAgent _videoFactoryNoLogoAgent;
     //[SerializeField] private Texture _recordTextureNoLogo;
 
     [SerializeField, Header("Preview")] private PreviewAgent _previewAgent;
 
+     private VideoPlayer _previewVideoPlayer;
+
 
     private bool _videoIsGenerateCompleted = false;
     private bool _showResultLock = false;
     private bool _doRunWhenStartLock = false;
+
+
+    private string newVideoUrl;
+
+    //  挂载的使用操作信息
+    private Action _OnUpdateHandleTimeAction;
+    private Action _OnKeepOpenAction;
+    private Action _OnCloseKeepOpenAction;
+
+    private Action _OnErrorHappened;
 
     private void Reset()
     {
@@ -41,7 +55,7 @@ public class StepFourCardAgent : CardBaseAgent
         _videoIsGenerateCompleted = false;
 
         // 预处理UI
-
+        _previewRect.gameObject.SetActive(false);
     }
 
     /// <summary>
@@ -49,6 +63,11 @@ public class StepFourCardAgent : CardBaseAgent
     /// </summary>
     public override void DoPrepare() {
         Reset();
+        _previewVideoPlayerHolder.texture = _defaultTexture;
+
+        //_recordTexture
+
+        _OnKeepOpenAction.Invoke();
 
         Text[] texts = _confirmRect.GetComponentsInChildren<Text>();
         foreach (Text t in texts)
@@ -59,6 +78,8 @@ public class StepFourCardAgent : CardBaseAgent
         }
         _confirmRect.GetComponent<Button>().interactable = false;
 
+        _previewVideoPlayerHolder.texture = _recordTexture;
+
         // 此处处理视频拼接
         DoGenerateVideo();
 
@@ -67,6 +88,8 @@ public class StepFourCardAgent : CardBaseAgent
 
     public override void DoRunIn()
     {
+        gameObject.SetActive(true);
+
         Debug.Log("场景4进入");
         // 显示在首个
         GetComponent<RectTransform>().SetAsLastSibling();
@@ -94,9 +117,23 @@ public class StepFourCardAgent : CardBaseAgent
 
     }
 
+    /// <summary>
+    ///     生命周期 - Do Run Out
+    /// </summary>
     public override void DoRunOut()
     {
-        _previewVideoPlayer.Stop();
+        if (_previewVideoPlayer != null) {
+
+            if (_previewVideoPlayer.isPlaying)
+            {
+                _previewVideoPlayer.Stop();
+
+                Destroy(GetComponent<VideoPlayer>());
+            }
+        }
+
+
+       
         CompleteRunOut();
     }
 
@@ -105,6 +142,10 @@ public class StepFourCardAgent : CardBaseAgent
     /// 结束阶段
     /// </summary>
     public override void DoEnd() {
+
+        _previewVideoPlayerHolder.texture = _defaultTexture;
+        _previewRect.gameObject.SetActive(false);
+
         gameObject.SetActive(false);
         Debug.Log("场景4结束");
         _NextCard.DoActive();
@@ -113,9 +154,11 @@ public class StepFourCardAgent : CardBaseAgent
 
     // 点击确认
     public void OnClickConfirm() {
+        _OnUpdateHandleTimeAction.Invoke();
+
         nextCard = _confirmCardAgent;
 
-        _videoFactoryAgent.StopPlayVideo();
+        //_videoFactoryAgent.StopPlayVideo();
 
         //_previewAgent.UpdateVideo(_videoFactoryAgent.GetVideoAddress(),_videoFactoryNoLogoAgent.GetVideoAddress());
 
@@ -126,6 +169,8 @@ public class StepFourCardAgent : CardBaseAgent
     // 点击重拍
     public void OnClickRePhoto()
     {
+        _OnUpdateHandleTimeAction.Invoke();
+
         nextCard = _rephotoCardAgent;
 
         _videoFactoryAgent.StopPlayVideoAndClear();
@@ -151,6 +196,10 @@ public class StepFourCardAgent : CardBaseAgent
 
 
     private void ShowResult() {
+        PlayNewVideo();
+
+        _OnCloseKeepOpenAction.Invoke();
+
 
     }
 
@@ -159,7 +208,8 @@ public class StepFourCardAgent : CardBaseAgent
     /// </summary>
     private void DoGenerateVideo() {
 
-        _videoFactoryAgent.DoActive(OnVideoGenerate,true);
+        _videoFactoryAgent.DoActive(OnVideoGenerate, OnRecordStart);
+        _previewVideoPlayerHolder.texture = _recordTexture;
 
     }
 
@@ -167,10 +217,76 @@ public class StepFourCardAgent : CardBaseAgent
     {
         Debug.Log("Video 生成完成 ： " + videoUrl);
 
-        _videoIsGenerateCompleted = true;
+        if (gameObject.activeSelf) {
+            if (videoUrl != null)
+            {
+                newVideoUrl = videoUrl;
 
+                _previewVideoPlayer = gameObject.AddComponent<VideoPlayer>();
+                _previewVideoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+                _previewVideoPlayer.EnableAudioTrack(0, false);
+
+                _previewVideoPlayer.source = VideoSource.Url;
+                _previewVideoPlayer.url = newVideoUrl;
+                _previewVideoPlayer.isLooping = true;
+
+                _videoIsGenerateCompleted = true;
+            }
+        }
+    }
+
+
+    // 播放新视频
+
+    public void PlayNewVideo() {
+
+        Debug.Log("播放新视频开始");
+
+        StartCoroutine(PrepareVideoNewVideo());
+
+    }
+
+    IEnumerator PrepareVideoNewVideo()
+    {
+
+        _previewVideoPlayer.Prepare();
+        while (!_previewVideoPlayer.isPrepared)
+        {
+            yield return new WaitForSeconds(1);
+            break;
+        }
+
+        Debug.Log("准备新的视频成功");
+
+        _previewVideoPlayerHolder.texture = _previewVideoPlayer.texture;
+        _previewVideoPlayer.Play();
+
+        //StartRecord();
     }
 
 
 
+    private void OnRecordStart() {
+        _previewRect.gameObject.SetActive(true);
+    }
+
+    public override void OnUpdateHandleTime(Action action)
+    {
+        _OnUpdateHandleTimeAction = action;
+    }
+
+    public override void OnKeepOpen(Action action)
+    {
+        _OnKeepOpenAction = action;
+    }
+
+    public override void OnCloseKeepOpen(Action action)
+    {
+        _OnCloseKeepOpenAction = action;
+    }
+
+    public override void OnErrorHappend(Action action)
+    {
+        _OnErrorHappened = action;
+    }
 }

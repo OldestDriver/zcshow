@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +15,13 @@ public class StepOneCardAgent : CardBaseAgent
 
     //private bool _videoIsPrepared = false;  // 视频加载情况标识符
 
+    //  挂载的使用操作信息
+    private Action _OnUpdateHandleTimeAction;
+    private Action _OnKeepOpenAction;
+    private Action _OnCloseKeepOpenAction;
+
+    private Action _OnErrorHappened;
+
 
     void Reset() {
         //_videoIsPrepared = false;
@@ -28,6 +36,9 @@ public class StepOneCardAgent : CardBaseAgent
     /// 准备阶段
     /// </summary>
     public override void DoPrepare() {
+        _OnCloseKeepOpenAction.Invoke();
+        _OnUpdateHandleTimeAction.Invoke();
+
         Reset();
 
         CompletePrepare();
@@ -36,6 +47,8 @@ public class StepOneCardAgent : CardBaseAgent
     public override void DoRunIn()
     {
         Debug.Log("场景1进入");
+
+        gameObject.SetActive(true);
 
 
         // 显示在首个
@@ -64,6 +77,8 @@ public class StepOneCardAgent : CardBaseAgent
     /// 结束阶段
     /// </summary>
     public override void DoEnd() {
+        _OnUpdateHandleTimeAction.Invoke();
+
         Debug.Log("场景1 结束");
         // 此处添加移除特效
         _NextCard?.DoActive();
@@ -74,8 +89,30 @@ public class StepOneCardAgent : CardBaseAgent
 
 
     public void DoClick() {
+        _OnUpdateHandleTimeAction.Invoke();
+
         DoRunOut();
     }
 
+
+    public override void OnUpdateHandleTime(Action action)
+    { 
+        _OnUpdateHandleTimeAction = action;
+    }
+
+    public override void OnKeepOpen(Action action)
+    {
+        _OnKeepOpenAction = action;
+    }
+
+    public override void OnCloseKeepOpen(Action action)
+    {
+        _OnCloseKeepOpenAction = action;
+    }
+
+    public override void OnErrorHappend(Action action)
+    {
+        _OnErrorHappened = action;
+    }
 
 }
